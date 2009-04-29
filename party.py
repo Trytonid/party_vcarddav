@@ -1,8 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-from trytond.model import ModelSQL, ModelView, fields
+from trytond.model import ModelSQL, ModelView
 from trytond.report import Report
-from trytond.wizard import Wizard
 import base64
 import copy
 

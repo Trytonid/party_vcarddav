@@ -7,7 +7,7 @@ import re
 
 info = eval(file('__tryton__.py').read())
 
-requires = []
+requires = ['vobject']
 for dep in info.get('depends', []):
     match = re.compile(
             '(ir|res|workflow|webdav)((\s|$|<|>|<=|>=|==|!=).*?$)').match(dep)
@@ -35,8 +35,7 @@ setup(name='trytond_party_vcarddav',
     ],
     package_data={
         'trytond.modules.party_vcarddav': info.get('xml', []) \
-                + info.get('translation', []) \
-                + ['label.odt'],
+                + info.get('translation', []),
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -56,9 +55,6 @@ setup(name='trytond_party_vcarddav',
     ],
     license='GPL-3',
     install_requires=requires,
-    extras_require={
-        'VAT': ['vatnumber'],
-    },
     zip_safe=False,
     entry_points="""
     [trytond.modules]

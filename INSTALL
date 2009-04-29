@@ -5,9 +5,9 @@ Prerequisites
 -------------
 
  * Python 2.4 or later (http://www.python.org/)
- * trytond 1.1.x (http://www.tryton.org/)
- * trytond_country (http://www.tryton.org/)
- * Optional: vatnumber (http://code.google.com/p/vatnumber/)
+ * trytond (http://www.tryton.org/)
+ * trytond_party (http://www.tryton.org/)
+ * vobject (http://vobject.skyhouseconsulting.com/)
 
 Installation
 ------------
