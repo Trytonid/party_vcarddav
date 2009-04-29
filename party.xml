@@ -11,15 +11,10 @@ this repository contains the full copyright notices and license terms. -->
             <field name="extension">vcf</field>
         </record>
 
-        <record model="ir.action.wizard" id="create_vcard">
-            <field name="name">VCard</field>
-            <field name="wiz_name">party_vcarddav.party.create_vcard</field>
-            <field name="model">party.party</field>
-        </record>
         <record model="ir.action.keyword" id="create_vcard_keyword">
             <field name="keyword">form_print</field>
             <field name="model">party.party,0</field>
-            <field name="action" ref="create_vcard"/>
+            <field name="action" ref="report_party_vcard"/>
         </record>
 
     </data>

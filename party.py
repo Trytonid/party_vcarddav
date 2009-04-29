@@ -20,21 +20,6 @@ class ActionReport(ModelSQL, ModelView):
 ActionReport()
 
 
-class CreateVCard(Wizard):
-    _name = 'party_vcarddav.party.create_vcard'
-    states = {
-        'init': {
-            'result': {
-                'type': 'print',
-                'report': 'party_vcarddav.party.vcard',
-                'state': 'end',
-            },
-        },
-    }
-
-CreateVCard()
-
-
 class VCard(Report):
     _name = 'party_vcarddav.party.vcard'
 
