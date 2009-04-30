@@ -77,7 +77,8 @@ class VCard(Report):
         card.add('fn')
         card.fn.value = party.full_name
 
-        for address in party.addresses:
+        if party.addresses:
+            address = party.addresses[0]
             country = address.country and address.country.name or ''
             subdivision = address.subdivision and address.subdivision.name or ''
             city = address.city or ''
@@ -88,21 +89,20 @@ class VCard(Report):
             addr.value = vobject.vcard.Address(
                 city=city, country=country, street=street, region=subdivision)
 
-        for cm in party.contact_mechanisms:
-            if cm.type == 'email':
-                email = card.add('email')
-                email.value = cm.value
-                email.type_param = 'INTERNET'
+        if party.email:
+            email = card.add('email')
+            email.value = party.email
+            email.type_param = 'INTERNET'
 
-            if cm.type == 'phone':
-                phone = card.add('phone')
-                phone.value = cm.value
-                phone.type_param = 'WORK'
+        if party.phone:
+            phone = card.add('tel')
+            phone.value = party.phone
+            phone.type_param = 'VOICE;WORK'
 
-            if cm.type == 'mobile':
-                mobile = card.add('phone')
-                mobile.value = cm.value
-                mobile.type_param = 'MOBILE'
+        if party.mobile:
+            mobile = card.add('tel')
+            mobile.value = party.mobile
+            mobile.type_param = 'CELL'
 
         return card
 
