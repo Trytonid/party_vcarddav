@@ -1,9 +1,43 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-from trytond.model import ModelSQL, ModelView
+from trytond.model import ModelSQL, ModelView, fields
 from trytond.report import Report
+from trytond.backend import TableHandler, FIELDS
 import base64
 import copy
+import uuid
+
+
+class Party(ModelSQL, ModelView):
+    _name = 'party.party'
+    uuid = fields.Char('UUID', required=True,
+            help='Universally Unique Identifier')
+
+    def __init__(self):
+        super(Party, self).__init__()
+        self._sql_constraints = [
+                ('uuid_uniq', 'UNIQUE(uuid)',
+                    'The UUID of the party must be unique!'),
+        ]
+
+    def init(self, cursor, module_name):
+        table = TableHandler(cursor, self, module_name)
+
+        if not table.column_exist('uuid'):
+            table.add_raw_column('uuid',
+                    FIELDS[self.uuid._type].sql_type(self.uuid),
+                    FIELDS[self.uuid._type].sql_format, None, None)
+            cursor.execute('SELECT id FROM "' + self._table + '"')
+            for id, in cursor.fetchall():
+                cursor.execute('UPDATE "' + self._table + '" ' \
+                        'SET "uuid" = %s WHERE id = %s',
+                        (self.default_uuid(cursor, 0), id))
+        super(Party, self).init(cursor, module_name)
+
+    def default_uuid(self, cursor, user, context=None):
+        return str(uuid.uuid4())
+Party()
+
 
 class ActionReport(ModelSQL, ModelView):
     _name = 'ir.action.report'
