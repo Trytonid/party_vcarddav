@@ -3,11 +3,13 @@
 #this repository contains the full copyright notices and license terms.
 {
     'name' : 'Party - vCardDAV',
+    'name_de_DE': 'Parteien vCardDAV',
     'version' : '0.0.1',
     'author' : 'B2CK',
     'email': 'info@b2ck.com',
     'website': 'http://www.tryton.org/',
     'description': 'Add CardDAV on parties',
+    'description_de_DE': 'Ermöglicht CardDAV für Parteien',
     'depends' : [
         'ir',
         'res',
@@ -17,5 +19,6 @@
         'party.xml',
     ],
     'translation': [
+        'de_DE.csv',
     ],
 }
