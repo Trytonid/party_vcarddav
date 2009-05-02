@@ -23,7 +23,7 @@ class Collection(ModelSQL, ModelView):
         '''
         party_obj = self.pool.get('party.party')
 
-        if uri.startswith('Contacts/'):
+        if uri and uri.startswith('Contacts/'):
             uuid = uri[9:-4]
             party_ids = party_obj.search(cursor, user, [
                 ('uuid', '=', uuid),
