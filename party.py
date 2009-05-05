@@ -47,6 +47,7 @@ class ActionReport(ModelSQL, ModelView):
         new_ext = ('vcf', 'VCard file')
         if new_ext not in self.extension.selection:
             self.extension = copy.copy(self.extension)
+            self.extension.selection = copy.copy(self.extension.selection)
             self.extension.selection.append(new_ext)
             self._reset_columns()
 
