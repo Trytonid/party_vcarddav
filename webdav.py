@@ -3,6 +3,7 @@
 from trytond.model import ModelView, ModelSQL
 from DAV.errors import DAV_NotFound, DAV_Forbidden
 import base64
+import urlparse
 
 
 class Collection(ModelSQL, ModelView):
@@ -114,11 +115,26 @@ class Collection(ModelSQL, ModelView):
 
     def put(self, cursor, user, uri, data, content_type, context=None,
             cache=None):
+        import vobject
+        party_obj = self.pool.get('party.party')
+
         party_id = self.vcard(cursor, user, uri, context=context)
         if party_id is None:
-            raise DAV_Forbidden
+            vcard = vobject.readOne(data)
+            values = party_obj.vcard2values(cursor, user, None, vcard,
+                    context=context)
+            party_id = party_obj.create(cursor, user, values, context=context)
+            party = party_obj.browse(cursor, user, party_id, context=context)
+            return cursor.database_name + '/Contacts/' + party.uuid + '.vcf'
         if party_id:
-            raise DAV_Forbidden
+            vcard = vobject.readOne(data)
+            values = party_obj.vcard2values(cursor, user, party_id, vcard,
+                    context=context)
+            try:
+                party_obj.write(cursor, user, party_id, values, context=context)
+            except:
+                raise DAV_Forbidden
+            return
         return super(Collection, self).put(cursor, user, uri, data,
                 content_type, context=context)
 
@@ -141,11 +157,17 @@ class Collection(ModelSQL, ModelView):
                 cache=cache)
 
     def rm(self, cursor, user, uri, context=None, cache=None):
+        party_obj = self.pool.get('party.party')
+
         party_id = self.vcard(cursor, user, uri, context=context)
         if party_id is None:
             raise DAV_Forbidden
         if party_id:
-            raise DAV_Forbidden
+            try:
+                party_obj.delete(cursor, user, party_id, context=context)
+            except:
+                raise DAV_Forbidden
+            return
         return super(Collection, self).rm(cursor, user, uri, context=context,
                 cache=cache)
 
