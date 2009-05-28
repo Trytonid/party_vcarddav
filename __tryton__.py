@@ -14,6 +14,7 @@
         'ir',
         'res',
         'party',
+        'webdav',
     ],
     'xml' : [
         'party.xml',
