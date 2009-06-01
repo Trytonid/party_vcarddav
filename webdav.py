@@ -167,7 +167,7 @@ class Collection(ModelSQL, ModelView):
                 party_obj.delete(cursor, user, party_id, context=context)
             except:
                 raise DAV_Forbidden
-            return
+            return 200
         return super(Collection, self).rm(cursor, user, uri, context=context,
                 cache=cache)
 
