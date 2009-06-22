@@ -235,15 +235,24 @@ class VCard(Report):
 
     def execute(self, cursor, user, ids, datas, context=None):
         party_obj = self.pool.get('party.party')
+        action_report_obj = self.pool.get('ir.action.report')
 
         if context is None:
             context = {}
+
+        action_report_ids = action_report_obj.search(cursor, user, [
+            ('report_name', '=', self._name)
+            ], context=context)
+        if not action_report_ids:
+            raise Exception('Error', 'Report (%s) not find!' % self._name)
+        action_report = action_report_obj.browse(cursor, user,
+                action_report_ids[0], context=context)
 
         parties = party_obj.browse(cursor, user, ids, context=context)
 
         data = ''.join(self.create_vcard(party).serialize() for party in parties)
 
-        return ('vcf', base64.encodestring(data), False)
+        return ('vcf', base64.encodestring(data), False, action_report.name)
 
     def create_vcard(self, party):
         '''
