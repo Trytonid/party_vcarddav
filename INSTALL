@@ -8,7 +8,7 @@ Prerequisites
  * trytond (http://www.tryton.org/)
  * trytond_party (http://www.tryton.org/)
  * vobject (http://vobject.skyhouseconsulting.com/)
- * pywebdav (http://sourceforge.net/projects/pywebdav/)
+ * pywebdav 0.9.3 or later (http://sourceforge.net/projects/pywebdav/)
 
 Installation
 ------------

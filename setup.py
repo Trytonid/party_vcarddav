@@ -7,7 +7,7 @@ import re
 
 info = eval(file('__tryton__.py').read())
 
-requires = ['vobject', 'PyWebDAV']
+requires = ['vobject', 'PyWebDAV >= 0.9.3']
 for dep in info.get('depends', []):
     match = re.compile(
             '(ir|res|workflow|webdav)((\s|$|<|>|<=|>=|==|!=).*?$)').match(dep)

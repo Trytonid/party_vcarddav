@@ -5,6 +5,8 @@ from DAV.errors import DAV_NotFound, DAV_Forbidden
 import base64
 import urlparse
 
+CARDDAV_NS = 'urn:ietf:params:xml:ns:carddav'
+
 
 class Collection(ModelSQL, ModelView):
 
@@ -32,28 +34,124 @@ class Collection(ModelSQL, ModelView):
             if party_ids:
                 return party_ids[0]
             return None
+        if uri == 'Contacts':
+            return None
         return False
 
-    def get_childs(self, cursor, user, uri, context=None, cache=None):
+    def _carddav_filter_domain(self, cursor, user, filter, context=None):
+        '''
+        Return a domain for the carddav filter
+
+        :param cursor: the database cursor
+        :param user: the user id
+        :param filter: the DOM Element of filter
+        :param context: the context
+
+        :return: a list for domain
+        '''
+        address_obj = self.pool.get('party.address')
+        contact_mechanism_obj = self.pool.get('party.contact_mechanism')
+
+        res = []
+        if not filter:
+            return []
+        if filter.localName == 'addressbook-query':
+            addressbook_filter = filter.getElementsByTagNameNS(
+                    'urn:ietf:params:xml:ns:caldav', 'filter')[0]
+            if addressbook_filter.hasAttribute('test') \
+                    and addressbook_filter.getAttribute('test') == 'allof':
+                res.append('AND')
+            else:
+                res.append('OR')
+
+            for prop in addressbook_filter.childNodes:
+                name = prop.getAttribute('name').lower()
+                field = None
+                if name == 'fn':
+                    field = 'rec_name'
+                if name == 'n':
+                    field = 'name'
+                if name == 'uid':
+                    field = 'uid'
+                if name == 'adr':
+                    field = 'rec_name'
+                if name in ('mail', 'tel'):
+                    field = 'value'
+                if field:
+                    res2 = []
+                    if prop.hasAttribute('test') \
+                            and prop.addressbook_filter.getAttribute('test') == 'allof':
+                        res2.append('AND')
+                    else:
+                        res2.append('OR')
+                    if prop.getElementsByTagNameNS(CARDDAV_NS, 'is-not-defined'):
+                        res2.append((field, '=', False))
+                    for text_match in prop.getElementsByTagNameNS(CARDDAV_NS,
+                            'text-match'):
+                        value = text_match.firstChild.data
+                        negate = False
+                        if text_match.hasAttribute('negate-condition') \
+                                and text_match.getAttribute(
+                                        'negate-condition') == 'yes':
+                            negate = True
+                        type = 'contains'
+                        if text_match.hasAttribute('match-type'):
+                            type = text_match.getAttribute('match-type')
+                        if type == 'equals':
+                            pass
+                        elif type in ('contains', 'substring'):
+                            value = '%' + value + '%'
+                        elif type == 'starts-with':
+                            value = value + '%'
+                        elif type == 'ends-with':
+                            value = '%' + value
+                        if not negate:
+                            res2.append((field, 'ilike', value))
+                        else:
+                            res2.append((field, 'not ilike', value))
+                    if name == 'adr':
+                        domain = res2
+                        address_ids = address_obj.search(cursor, user, domain,
+                                context=context)
+                        res = [('addresses', 'in', address_ids)]
+                    elif name in ('mail', 'tel'):
+                        if name == 'mail':
+                            type = ['email']
+                        else:
+                            type = ['phone', 'mobile']
+                        domain = [('type', 'in', type), res2]
+                        contact_mechanism_ids = contact_mechanism_obj.search(cursor,
+                                user, domain, context=context)
+                        res2 = [('contact_mechanisms', 'in', contact_mechanism_ids)]
+                    res.append(res2)
+        return res
+
+    def get_childs(self, cursor, user, uri, filter=None, context=None,
+            cache=None):
         party_obj = self.pool.get('party.party')
 
         if uri in ('Contacts', 'Contacts/'):
-            party_ids = party_obj.search(cursor, user, [], context=context)
+            domain = self._carddav_filter_domain(cursor, user, filter,
+                    context=context)
+            party_ids = party_obj.search(cursor, user, domain, context=context)
             parties = party_obj.browse(cursor, user, party_ids, context=context)
             return [x.uuid + '.vcf' for x in parties]
         party_id = self.vcard(cursor, user, uri, context=context)
         if party_id or party_id is None:
             return []
         res = super(Collection, self).get_childs(cursor, user, uri,
-                context=context, cache=cache)
-        if not uri:
+                filter=filter, context=context, cache=cache)
+        if not uri and not filter:
             res.append('Contacts')
         return res
 
     def get_resourcetype(self, cursor, user, uri, context=None, cache=None):
-        from DAV.constants import OBJECT
-        if self.vcard(cursor, user, uri, context=context):
+        from DAV.constants import COLLECTION, OBJECT
+        party_id = self.vcard(cursor, user, uri, context=context)
+        if party_id:
             return OBJECT
+        elif party_id is None:
+            return COLLECTION
         return super(Collection, self).get_resourcetype(cursor, user, uri,
                 context=context, cache=cache)
 
@@ -113,6 +211,17 @@ class Collection(ModelSQL, ModelView):
         return super(Collection, self).get_data(cursor, user, uri,
                 context=context, cache=cache)
 
+    def get_address_data(self, cursor, user, uri, context=None, cache=None):
+        vcard_obj = self.pool.get('party_vcarddav.party.vcard', type='report')
+        party_id = self.vcard(cursor, user, uri, context=context)
+        if not party_id:
+            raise DAV_NotFound
+        val = vcard_obj.execute(cursor, user, [party_id],
+                {'id': party_id, 'ids': [party_id]},
+                context=context)
+        res = base64.decodestring(val[1])
+        return res.decode('utf-8')
+
     def put(self, cursor, user, uri, data, content_type, context=None,
             cache=None):
         import vobject
@@ -123,7 +232,11 @@ class Collection(ModelSQL, ModelView):
             vcard = vobject.readOne(data)
             values = party_obj.vcard2values(cursor, user, None, vcard,
                     context=context)
-            party_id = party_obj.create(cursor, user, values, context=context)
+            try:
+                party_id = party_obj.create(cursor, user, values,
+                        context=context)
+            except:
+                raise DAV_Forbidden
             party = party_obj.browse(cursor, user, party_id, context=context)
             return cursor.database_name + '/Contacts/' + party.uuid + '.vcf'
         if party_id:
