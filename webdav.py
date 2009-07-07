@@ -170,8 +170,9 @@ class Collection(ModelSQL, ModelView):
             cursor.execute('SELECT EXTRACT(epoch FROM create_date) ' \
                     'FROM "' + party_obj._table + '" ' \
                         'WHERE id = %s', (party_id,))
-            if cursor.rowcount:
-                return cursor.fetchone()[0]
+            fetchone = cursor.fetchone()
+            if fetchone:
+                return fetchone[0]
         return super(Collection, self).get_creationdate(cursor, user, uri,
                 context=context, cache=cache)
 
