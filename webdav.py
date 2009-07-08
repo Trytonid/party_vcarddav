@@ -182,8 +182,6 @@ class Collection(ModelSQL, ModelView):
         contact_mechanism_obj = self.pool.get('party.contact_mechanism')
 
         party_id = self.vcard(cursor, user, uri, context=context)
-        if party_id is None:
-            raise DAV_NotFound
         if party_id:
             cursor.execute('SELECT ' \
                     'MAX(EXTRACT(epoch FROM COALESCE(p.write_date, p.create_date))), ' \
