@@ -196,6 +196,7 @@ class Address(ModelSQL, ModelView):
         vals = {}
         vals['street'] = adr.value.street or ''
         vals['city'] = adr.value.city or ''
+        vals['zip'] = adr.value.code or ''
         if adr.value.country:
             country_ids = country_obj.search(cursor, user, [
                 ('rec_name', '=', adr.value.country),
