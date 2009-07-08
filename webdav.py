@@ -57,7 +57,7 @@ class Collection(ModelSQL, ModelView):
             return []
         if filter.localName == 'addressbook-query':
             addressbook_filter = filter.getElementsByTagNameNS(
-                    'urn:ietf:params:xml:ns:caldav', 'filter')[0]
+                    'urn:ietf:params:xml:ns:carddav', 'filter')[0]
             if addressbook_filter.hasAttribute('test') \
                     and addressbook_filter.getAttribute('test') == 'allof':
                 res.append('AND')
