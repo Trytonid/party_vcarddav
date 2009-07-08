@@ -59,7 +59,8 @@ class Party(ModelSQL, ModelView):
             vcard.n.value = vobject.vcard.Name(vcard.fn.value)
         res['vcard'] = vcard.serialize()
         if not party_id:
-            res['uuid'] = vcard.uid.value
+            if hasattr(vcard, 'uid'):
+                res['uuid'] = vcard.uid.value
             res['addresses'] = []
             for adr in vcard.contents.get('adr', []):
                 vals = address_obj.vcard2values(cursor, user, adr,
