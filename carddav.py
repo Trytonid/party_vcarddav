@@ -12,10 +12,10 @@ TrytonDAVInterface.PROPS['urn:ietf:params:xml:ns:carddav'] = (
     )
 TrytonDAVInterface.M_NS['urn:ietf:params:xml:ns:carddav'] = '_get_carddav'
 
-_mk_prop_response = propfind.PROPFIND.mk_prop_response
+propfind.PROPFIND._mk_prop_response = propfind.PROPFIND.mk_prop_response
 
 def mk_prop_response(self, uri, good_props, bad_props, doc):
-    res = _mk_prop_response(self, uri, good_props, bad_props, doc)
+    res = propfind.PROPFIND._mk_prop_response(self, uri, good_props, bad_props, doc)
     dbname, uri = TrytonDAVInterface.get_dburi(uri)
     if uri in ('Contacts', 'Contacts/'):
         ad = doc.createElement('addressbook')
@@ -28,7 +28,7 @@ def mk_prop_response(self, uri, good_props, bad_props, doc):
             cols[0].parentNode.appendChild(vc)
     return res
 
-propfind.PROPFIND.mk_prop_response = mk_prop_response
+propfind.PROPFIND.mk_prop_response = propfind.PROPFIND.mk_prop_response
 
 def _get_carddav_address_data(self, uri):
     dbname, dburi = self._get_dburi(uri)
