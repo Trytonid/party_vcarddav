@@ -338,7 +338,11 @@ class Collection(ModelSQL, ModelView):
     def exists(self, cursor, user, uri, context=None, cache=None):
         party_id = self.vcard(cursor, user, uri, context=context)
         if party_id is None or party_id:
-            return 1
+            if party_id:
+                return 1
+            if uri in ('Contacts', 'Contacts/'):
+                return 1
+            return 0
         return super(Collection, self).exists(cursor, user, uri, context=context,
                 cache=cache)
 
