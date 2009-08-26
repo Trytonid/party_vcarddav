@@ -138,6 +138,10 @@ class Collection(ModelSQL, ModelView):
                     context=context)
             party_ids = party_obj.search(cursor, user, domain, context=context)
             parties = party_obj.browse(cursor, user, party_ids, context=context)
+            if cache is not None:
+                cache.setdefault('_contact', {})
+                for party_id in party_ids:
+                    cache['_contact'][party_id] = {}
             return [x.uuid + '.vcf' for x in parties]
         party_id = self.vcard(cursor, user, uri, context=context)
         if party_id or party_id is None:
@@ -170,12 +174,32 @@ class Collection(ModelSQL, ModelView):
         if party_id is None:
             raise DAV_NotFound
         if party_id:
-            cursor.execute('SELECT EXTRACT(epoch FROM create_date) ' \
-                    'FROM "' + party_obj._table + '" ' \
-                        'WHERE id = %s', (party_id,))
-            fetchone = cursor.fetchone()
-            if fetchone:
-                return fetchone[0]
+            if cache is not None:
+                cache.setdefault('_contact', {})
+                ids = cache['_contact'].keys()
+                if party_id not in ids:
+                    ids.append(party_id)
+                elif 'creationdate' in cache['_contact'][party_id]:
+                    return cache['_contact'][party_id]['creationdate']
+            else:
+                ids = [party_id]
+            res = None
+            for i in range(0, len(ids), cursor.IN_MAX):
+                sub_ids = ids[i:i + cursor.IN_MAX]
+                cursor.execute('SELECT id, ' \
+                            'EXTRACT(epoch FROM create_date) ' \
+                        'FROM "' + party_obj._table + '" ' \
+                        'WHERE id IN (' + \
+                            ','.join('%s' for x in sub_ids) + ')',
+                        sub_ids)
+                for party_id2, date in cursor.fetchall():
+                    if party_id2 == party_id:
+                        res = date
+                    if cache is not None:
+                        cache['_contact'].setdefault(party_id2, {})
+                        cache['_contact'][party_id2]['creationdate'] = date
+            if res is not None:
+                return res
         return super(Collection, self).get_creationdate(cursor, user, uri,
                 context=context, cache=cache)
 
@@ -186,17 +210,42 @@ class Collection(ModelSQL, ModelView):
 
         party_id = self.vcard(cursor, user, uri, context=context)
         if party_id:
-            cursor.execute('SELECT ' \
-                    'MAX(EXTRACT(epoch FROM COALESCE(p.write_date, p.create_date))), ' \
-                    'MAX(EXTRACT(epoch FROM COALESCE(a.write_date, a.create_date))), ' \
-                    'MAX(EXTRACT(epoch FROM COALESCE(c.write_date, c.create_date))) ' \
-                    'FROM "' + party_obj._table + '" p ' \
-                        'LEFT JOIN "' + address_obj._table + '" a ' \
-                        'ON p.id = a.party ' \
-                        'LEFT JOIN "' + contact_mechanism_obj._table + '" c ' \
-                        'ON p.id = c.party ' \
-                    'WHERE p.id = %s', (party_id,))
-            return max(cursor.fetchone())
+            if cache is not None:
+                cache.setdefault('_contact', {})
+                ids = cache['_contact'].keys()
+                if party_id not in ids:
+                    ids.append(party_id)
+                elif 'lastmodified' in cache['_contact'][party_id]:
+                    return cache['_contact'][party_id]['lastmodified']
+            else:
+                ids = [party_id]
+            res = None
+            for i in range(0, len(ids), cursor.IN_MAX):
+                sub_ids = ids[i:i + cursor.IN_MAX]
+                cursor.execute('SELECT p.id, ' \
+                            'MAX(EXTRACT(epoch FROM ' \
+                                'COALESCE(p.write_date, p.create_date))), ' \
+                            'MAX(EXTRACT(epoch FROM ' \
+                                'COALESCE(a.write_date, a.create_date))), ' \
+                            'MAX(EXTRACT(epoch FROM ' \
+                                'COALESCE(c.write_date, c.create_date))) ' \
+                        'FROM "' + party_obj._table + '" p ' \
+                            'LEFT JOIN "' + address_obj._table + '" a ' \
+                            'ON p.id = a.party ' \
+                            'LEFT JOIN "' + contact_mechanism_obj._table + '" c ' \
+                            'ON p.id = c.party ' \
+                        'WHERE p.id IN (' + \
+                            ','.join('%s' for x in sub_ids) + ') ' \
+                        'GROUP BY p.id', sub_ids)
+                for party_id2, date_p, date_a, date_c in cursor.fetchall():
+                    date = max(date_p, date_a, date_c)
+                    if party_id2 == party_id:
+                        res = date
+                    if cache is not None:
+                        cache['_contact'].setdefault(party_id2, {})
+                        cache['_contact'][party_id2]['lastmodified'] = date
+            if res is not None:
+                return res
         return super(Collection, self).get_lastmodified(cursor, user, uri,
                 context=context, cache=cache)
 
