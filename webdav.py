@@ -190,7 +190,7 @@ class Collection(ModelSQL, ModelView):
                             'EXTRACT(epoch FROM create_date) ' \
                         'FROM "' + party_obj._table + '" ' \
                         'WHERE id IN (' + \
-                            ','.join('%s' for x in sub_ids) + ')',
+                            ','.join(('%s',) * len(sub_ids)) + ')',
                         sub_ids)
                 for party_id2, date in cursor.fetchall():
                     if party_id2 == party_id:
@@ -235,7 +235,7 @@ class Collection(ModelSQL, ModelView):
                             'LEFT JOIN "' + contact_mechanism_obj._table + '" c ' \
                             'ON p.id = c.party ' \
                         'WHERE p.id IN (' + \
-                            ','.join('%s' for x in sub_ids) + ') ' \
+                            ','.join(('%s',) * len(sub_ids)) + ') ' \
                         'GROUP BY p.id', sub_ids)
                 for party_id2, date_p, date_a, date_c in cursor.fetchall():
                     date = max(date_p, date_a, date_c)
