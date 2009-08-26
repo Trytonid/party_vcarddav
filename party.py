@@ -38,6 +38,30 @@ class Party(ModelSQL, ModelView):
     def default_uuid(self, cursor, user, context=None):
         return str(uuid.uuid4())
 
+    def create(self, cursor, user, vals, context=None):
+        collection_obj = self.pool.get('webdav.collection')
+
+        res = super(Party, self).create(cursor, user, vals, context=context)
+        # Restart the cache for vcard
+        collection_obj.vcard(cursor.dbname)
+        return res
+
+    def write(self, cursor, user, ids, vals, context=None):
+        collection_obj = self.pool.get('webdav.collection')
+
+        res = super(Party, self).write(cursor, user, ids, vals, context=context)
+        # Restart the cache for vcard
+        collection_obj.vcard(cursor.dbname)
+        return res
+
+    def delete(self, cursor, user, ids, context=None):
+        collection_obj = self.pool.get('webdav.collection')
+
+        res = super(Party, self).delete(cursor, user, ids, context=context)
+        # Restart the cache for vcard
+        collection_obj.vcard(cursor.dbname)
+        return res
+
     def vcard2values(self, cursor, user, party_id, vcard, context=None):
         '''
         Convert vcard to values for create or write

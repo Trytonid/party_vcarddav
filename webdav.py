@@ -1,6 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 from trytond.model import ModelView, ModelSQL
+from trytond.tools import Cache
 from DAV.errors import DAV_NotFound, DAV_Forbidden
 import base64
 import urlparse
@@ -37,6 +38,8 @@ class Collection(ModelSQL, ModelView):
         if uri == 'Contacts':
             return None
         return False
+
+    vcard = Cache('webdav_collection.vcard')(vcard)
 
     def _carddav_filter_domain(self, cursor, user, filter, context=None):
         '''
