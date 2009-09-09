@@ -1,7 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 from trytond.model import ModelView, ModelSQL
-from trytond.tools import Cache
+from trytond.tools import Cache, reduce_ids
 from DAV.errors import DAV_NotFound, DAV_Forbidden
 import base64
 import urlparse
@@ -186,12 +186,11 @@ class Collection(ModelSQL, ModelView):
             res = None
             for i in range(0, len(ids), cursor.IN_MAX):
                 sub_ids = ids[i:i + cursor.IN_MAX]
+                red_sql, red_ids = reduce_ids('id', sub_ids)
                 cursor.execute('SELECT id, ' \
                             'EXTRACT(epoch FROM create_date) ' \
                         'FROM "' + party_obj._table + '" ' \
-                        'WHERE id IN (' + \
-                            ','.join(('%s',) * len(sub_ids)) + ')',
-                        sub_ids)
+                        'WHERE ' + red_sql, red_ids)
                 for party_id2, date in cursor.fetchall():
                     if party_id2 == party_id:
                         res = date
@@ -222,6 +221,7 @@ class Collection(ModelSQL, ModelView):
             res = None
             for i in range(0, len(ids), cursor.IN_MAX):
                 sub_ids = ids[i:i + cursor.IN_MAX]
+                red_sql, red_ids = reduce_ids('p.id', sub_ids)
                 cursor.execute('SELECT p.id, ' \
                             'MAX(EXTRACT(epoch FROM ' \
                                 'COALESCE(p.write_date, p.create_date))), ' \
@@ -234,9 +234,8 @@ class Collection(ModelSQL, ModelView):
                             'ON p.id = a.party ' \
                             'LEFT JOIN "' + contact_mechanism_obj._table + '" c ' \
                             'ON p.id = c.party ' \
-                        'WHERE p.id IN (' + \
-                            ','.join(('%s',) * len(sub_ids)) + ') ' \
-                        'GROUP BY p.id', sub_ids)
+                        'WHERE ' + red_sql + ' ' \
+                        'GROUP BY p.id', red_ids)
                 for party_id2, date_p, date_a, date_c in cursor.fetchall():
                     date = max(date_p, date_a, date_c)
                     if party_id2 == party_id:
