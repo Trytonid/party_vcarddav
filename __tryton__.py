@@ -5,6 +5,7 @@
     'name' : 'Party - vCardDAV',
     'name_de_DE': 'Parteien vCardDAV',
     'name_es_CO' : 'vCardDAV de Compañía',
+    'name_fr_FR': 'Tiers - vCardDAV',
     'version' : '0.0.1',
     'author' : 'B2CK',
     'email': 'info@b2ck.com',
@@ -12,6 +13,7 @@
     'description': 'Add CardDAV on parties',
     'description_de_DE': 'Ermöglicht CardDAV für Parteien',
     'description_es_CO': 'Soporte de CardDAV para terceros',
+    'description_fr_FR': 'Ajoute le support CardDAV pour les tiers',
     'depends' : [
         'ir',
         'res',
