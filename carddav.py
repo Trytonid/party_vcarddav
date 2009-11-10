@@ -33,9 +33,14 @@ propfind.PROPFIND.mk_prop_response = mk_prop_response
 
 def _get_carddav_address_data(self, uri):
     dbname, dburi = self._get_dburi(uri)
+    if not dbname:
+        raise DAV_NotFound
     cursor = DATABASE['cursor']
     pool = Pool(DATABASE['dbname'])
-    collection_obj = pool.get('webdav.collection')
+    try:
+        collection_obj = pool.get('webdav.collection')
+    except KeyError:
+        raise DAV_NotFound
     try:
         res = collection_obj.get_address_data(cursor, int(USER_ID), dburi,
                 cache=CACHE)
