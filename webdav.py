@@ -13,6 +13,7 @@ class Collection(ModelSQL, ModelView):
 
     _name = "webdav.collection"
 
+    @Cache('webdav_collection.vcard')
     def vcard(self, cursor, user, uri, context=None):
         '''
         Return party ids of the vcard in uri or False
@@ -38,8 +39,6 @@ class Collection(ModelSQL, ModelView):
         if uri == 'Contacts':
             return None
         return False
-
-    vcard = Cache('webdav_collection.vcard')(vcard)
 
     def _carddav_filter_domain(self, cursor, user, filter, context=None):
         '''
