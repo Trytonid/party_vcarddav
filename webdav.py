@@ -284,7 +284,7 @@ class Collection(ModelSQL, ModelView):
             try:
                 party_id = party_obj.create(cursor, user, values,
                         context=context)
-            except:
+            except Exception:
                 raise DAV_Forbidden
             party = party_obj.browse(cursor, user, party_id, context=context)
             return cursor.database_name + '/Contacts/' + party.uuid + '.vcf'
@@ -294,7 +294,7 @@ class Collection(ModelSQL, ModelView):
                     context=context)
             try:
                 party_obj.write(cursor, user, party_id, values, context=context)
-            except:
+            except Exception:
                 raise DAV_Forbidden
             return
         return super(Collection, self).put(cursor, user, uri, data,
@@ -327,7 +327,7 @@ class Collection(ModelSQL, ModelView):
         if party_id:
             try:
                 party_obj.delete(cursor, user, party_id, context=context)
-            except:
+            except Exception:
                 raise DAV_Forbidden
             return 200
         return super(Collection, self).rm(cursor, user, uri, context=context,

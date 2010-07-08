@@ -46,7 +46,7 @@ def _get_carddav_address_data(self, uri):
                 cache=CACHE)
     except (DAV_Error, DAV_NotFound, DAV_Secret, DAV_Forbidden):
         raise
-    except:
+    except Exception:
         raise DAV_Error(500)
     return res
 
