@@ -1,11 +1,12 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-_TRYTON_RELOAD = False
-
 from DAV import propfind
 from DAV.errors import *
-from trytond.protocols.webdav import TrytonDAVInterface, USER_ID, CACHE, DATABASE
+from trytond.protocols.webdav import TrytonDAVInterface, CACHE
 from trytond.pool import Pool
+from trytond.transaction import Transaction
+
+_TRYTON_RELOAD = False
 
 TrytonDAVInterface.PROPS['urn:ietf:params:xml:ns:carddav'] = (
         'address-data',
@@ -35,15 +36,13 @@ def _get_carddav_address_data(self, uri):
     dbname, dburi = self._get_dburi(uri)
     if not dbname:
         raise DAV_NotFound
-    cursor = DATABASE['cursor']
-    pool = Pool(DATABASE['dbname'])
+    pool = Pool(Transaction().cursor.database_name)
     try:
         collection_obj = pool.get('webdav.collection')
     except KeyError:
         raise DAV_NotFound
     try:
-        res = collection_obj.get_address_data(cursor, int(USER_ID), dburi,
-                cache=CACHE)
+        res = collection_obj.get_address_data(dburi, cache=CACHE)
     except (DAV_Error, DAV_NotFound, DAV_Secret, DAV_Forbidden):
         raise
     except Exception:

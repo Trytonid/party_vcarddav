@@ -1,11 +1,12 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-from trytond.model import ModelSQL, ModelView, fields
-from trytond.report import Report
-from trytond.backend import TableHandler, FIELDS
 import base64
 import copy
 import uuid
+from trytond.model import ModelSQL, ModelView, fields
+from trytond.report import Report
+from trytond.backend import TableHandler, FIELDS
+from trytond.transaction import Transaction
 
 
 class Party(ModelSQL, ModelView):
@@ -21,7 +22,8 @@ class Party(ModelSQL, ModelView):
                     'The UUID of the party must be unique!'),
         ]
 
-    def init(self, cursor, module_name):
+    def init(self, module_name):
+        cursor = Transaction().cursor
         table = TableHandler(cursor, self, module_name)
 
         if not table.column_exist('uuid'):
@@ -32,45 +34,42 @@ class Party(ModelSQL, ModelView):
             for id, in cursor.fetchall():
                 cursor.execute('UPDATE "' + self._table + '" ' \
                         'SET "uuid" = %s WHERE id = %s',
-                        (self.default_uuid(cursor, 0), id))
-        super(Party, self).init(cursor, module_name)
+                        (self.default_uuid(), id))
+        super(Party, self).init(module_name)
 
-    def default_uuid(self, cursor, user, context=None):
+    def default_uuid(self):
         return str(uuid.uuid4())
 
-    def create(self, cursor, user, vals, context=None):
+    def create(self, vals):
         collection_obj = self.pool.get('webdav.collection')
 
-        res = super(Party, self).create(cursor, user, vals, context=context)
+        res = super(Party, self).create(vals)
         # Restart the cache for vcard
-        collection_obj.vcard(cursor.dbname)
+        collection_obj.vcard.reset()
         return res
 
-    def write(self, cursor, user, ids, vals, context=None):
+    def write(self, ids, vals):
         collection_obj = self.pool.get('webdav.collection')
 
-        res = super(Party, self).write(cursor, user, ids, vals, context=context)
+        res = super(Party, self).write(ids, vals)
         # Restart the cache for vcard
-        collection_obj.vcard(cursor.dbname)
+        collection_obj.vcard.reset()
         return res
 
-    def delete(self, cursor, user, ids, context=None):
+    def delete(self, ids):
         collection_obj = self.pool.get('webdav.collection')
 
-        res = super(Party, self).delete(cursor, user, ids, context=context)
+        res = super(Party, self).delete(ids)
         # Restart the cache for vcard
-        collection_obj.vcard(cursor.dbname)
+        collection_obj.vcard.reset()
         return res
 
-    def vcard2values(self, cursor, user, party_id, vcard, context=None):
+    def vcard2values(self, party_id, vcard):
         '''
         Convert vcard to values for create or write
 
-        :param cursor: the database cursor
-        :param user: the user id
         :param party_id: the party id for write or None for create
         :param vcard: a vcard instance of vobject
-        :param context: the context
         :return: a dictionary with values
         '''
         import vobject
@@ -87,8 +86,7 @@ class Party(ModelSQL, ModelView):
                 res['uuid'] = vcard.uid.value
             res['addresses'] = []
             for adr in vcard.contents.get('adr', []):
-                vals = address_obj.vcard2values(cursor, user, adr,
-                        context=context)
+                vals = address_obj.vcard2values(adr)
                 res['addresses'].append(('create', vals))
             res['contact_mechanisms'] = []
             for email in vcard.contents.get('email', []):
@@ -105,7 +103,7 @@ class Party(ModelSQL, ModelView):
                 vals['value'] = tel.value
                 res['contact_mechanisms'].append(('create', vals))
         else:
-            party = self.browse(cursor, user, party_id, context=context)
+            party = self.browse(party_id)
             i = 0
             res['addresses'] = []
             addresses_todelete = []
@@ -120,8 +118,7 @@ class Party(ModelSQL, ModelView):
                     addresses_todelete.append(address.id)
                     i += 1
                     continue
-                vals = address_obj.vcard2values(cursor, user, adr,
-                        context=context)
+                vals = address_obj.vcard2values(adr)
                 res['addresses'].append(('write', address.id, vals))
                 i += 1
             if addresses_todelete:
@@ -133,8 +130,7 @@ class Party(ModelSQL, ModelView):
             for adr in new_addresses:
                 if not hasattr(adr, 'value'):
                     continue
-                vals = address_obj.vcard2values(cursor, user, adr,
-                        context=context)
+                vals = address_obj.vcard2values(adr)
                 res['addresses'].append(('create', vals))
 
             i = 0
@@ -205,14 +201,11 @@ Party()
 class Address(ModelSQL, ModelView):
     _name = 'party.address'
 
-    def vcard2values(self, cursor, user, adr, context=None):
+    def vcard2values(self, adr):
         '''
         Convert adr from vcard to values for create or write
 
-        :param cursor: the database cursor
-        :param user: the user id
         :param adr: a adr from vcard instance of vobject
-        :param context: the context
         :return: a dictionary with values
         '''
         country_obj = self.pool.get('country.country')
@@ -223,17 +216,16 @@ class Address(ModelSQL, ModelView):
         vals['city'] = adr.value.city or ''
         vals['zip'] = adr.value.code or ''
         if adr.value.country:
-            country_ids = country_obj.search(cursor, user, [
+            country_ids = country_obj.search([
                 ('rec_name', '=', adr.value.country),
-                ], limit=1, context=context)
+                ], limit=1)
             if country_ids:
                 vals['country'] = country_ids[0]
                 if adr.value.region:
-                    subdivision_ids = subdivision_obj.search(cursor,
-                            user, [
-                                ('rec_name', '=', adr.value.region),
-                                ('country', '=', country_ids[0]),
-                                ], limit=1, context=context)
+                    subdivision_ids = subdivision_obj.search([
+                            ('rec_name', '=', adr.value.region),
+                            ('country', '=', country_ids[0]),
+                            ], limit=1)
                     if subdivision_ids:
                         vals['subdivision'] = subdivision_ids[0]
         return vals
@@ -259,22 +251,18 @@ ActionReport()
 class VCard(Report):
     _name = 'party_vcarddav.party.vcard'
 
-    def execute(self, cursor, user, ids, datas, context=None):
+    def execute(self, ids, datas):
         party_obj = self.pool.get('party.party')
         action_report_obj = self.pool.get('ir.action.report')
 
-        if context is None:
-            context = {}
-
-        action_report_ids = action_report_obj.search(cursor, user, [
+        action_report_ids = action_report_obj.search([
             ('report_name', '=', self._name)
-            ], context=context)
+            ])
         if not action_report_ids:
             raise Exception('Error', 'Report (%s) not find!' % self._name)
-        action_report = action_report_obj.browse(cursor, user,
-                action_report_ids[0], context=context)
+        action_report = action_report_obj.browse(action_report_ids[0])
 
-        parties = party_obj.browse(cursor, user, ids, context=context)
+        parties = party_obj.browse(ids)
 
         data = ''.join(self.create_vcard(party).serialize() for party in parties)
 
