@@ -16,7 +16,7 @@ class Party(ModelSQL, ModelView):
 
     def __init__(self):
         super(Party, self).__init__()
-        self._sql_constraints = [
+        self._sql_constraints += [
                 ('uuid_uniq', 'UNIQUE(uuid)',
                     'The UUID of the party must be unique!'),
         ]
