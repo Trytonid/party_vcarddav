@@ -7,6 +7,7 @@ from trytond.model import ModelSQL, ModelView, fields
 from trytond.report import Report
 from trytond.backend import TableHandler, FIELDS
 from trytond.transaction import Transaction
+from trytond.pool import Pool
 
 
 class Party(ModelSQL, ModelView):
@@ -41,7 +42,7 @@ class Party(ModelSQL, ModelView):
         return str(uuid.uuid4())
 
     def create(self, vals):
-        collection_obj = self.pool.get('webdav.collection')
+        collection_obj = Pool().get('webdav.collection')
 
         res = super(Party, self).create(vals)
         # Restart the cache for vcard
@@ -49,7 +50,7 @@ class Party(ModelSQL, ModelView):
         return res
 
     def write(self, ids, vals):
-        collection_obj = self.pool.get('webdav.collection')
+        collection_obj = Pool().get('webdav.collection')
 
         res = super(Party, self).write(ids, vals)
         # Restart the cache for vcard
@@ -57,7 +58,7 @@ class Party(ModelSQL, ModelView):
         return res
 
     def delete(self, ids):
-        collection_obj = self.pool.get('webdav.collection')
+        collection_obj = Pool().get('webdav.collection')
 
         res = super(Party, self).delete(ids)
         # Restart the cache for vcard
@@ -73,7 +74,7 @@ class Party(ModelSQL, ModelView):
         :return: a dictionary with values
         '''
         import vobject
-        address_obj = self.pool.get('party.address')
+        address_obj = Pool().get('party.address')
 
         res = {}
         res['name'] = vcard.fn.value
@@ -208,8 +209,8 @@ class Address(ModelSQL, ModelView):
         :param adr: a adr from vcard instance of vobject
         :return: a dictionary with values
         '''
-        country_obj = self.pool.get('country.country')
-        subdivision_obj = self.pool.get('country.subdivision')
+        country_obj = Pool().get('country.country')
+        subdivision_obj = Pool().get('country.subdivision')
 
         vals = {}
         vals['street'] = adr.value.street or ''
@@ -252,8 +253,8 @@ class VCard(Report):
     _name = 'party_vcarddav.party.vcard'
 
     def execute(self, ids, datas):
-        party_obj = self.pool.get('party.party')
-        action_report_obj = self.pool.get('ir.action.report')
+        party_obj = Pool().get('party.party')
+        action_report_obj = Pool().get('ir.action.report')
 
         action_report_ids = action_report_obj.search([
             ('report_name', '=', self._name)

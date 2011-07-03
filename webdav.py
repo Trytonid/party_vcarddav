@@ -7,6 +7,7 @@ from trytond.model import ModelView, ModelSQL
 from trytond.tools import reduce_ids
 from trytond.transaction import Transaction
 from trytond.cache import Cache
+from trytond.pool import Pool
 
 
 CARDDAV_NS = 'urn:ietf:params:xml:ns:carddav'
@@ -26,7 +27,7 @@ class Collection(ModelSQL, ModelView):
             or None if there is no party
             or False if not in Contacts
         '''
-        party_obj = self.pool.get('party.party')
+        party_obj = Pool().get('party.party')
 
         if uri and uri.startswith('Contacts/'):
             uuid = uri[9:-4]
@@ -47,8 +48,8 @@ class Collection(ModelSQL, ModelView):
         :param filter: the DOM Element of filter
         :return: a list for domain
         '''
-        address_obj = self.pool.get('party.address')
-        contact_mechanism_obj = self.pool.get('party.contact_mechanism')
+        address_obj = Pool().get('party.address')
+        contact_mechanism_obj = Pool().get('party.contact_mechanism')
 
         res = []
         if not filter:
@@ -126,7 +127,7 @@ class Collection(ModelSQL, ModelView):
         return res
 
     def get_childs(self, uri, filter=None, cache=None):
-        party_obj = self.pool.get('party.party')
+        party_obj = Pool().get('party.party')
 
         if uri in ('Contacts', 'Contacts/'):
             domain = self._carddav_filter_domain(filter)
@@ -161,7 +162,7 @@ class Collection(ModelSQL, ModelView):
         return super(Collection, self).get_contenttype(uri, cache=cache)
 
     def get_creationdate(self, uri, cache=None):
-        party_obj = self.pool.get('party.party')
+        party_obj = Pool().get('party.party')
         party_id = self.vcard(uri)
 
         cursor = Transaction().cursor
@@ -197,9 +198,10 @@ class Collection(ModelSQL, ModelView):
         return super(Collection, self).get_creationdate(uri, cache=cache)
 
     def get_lastmodified(self, uri, cache=None):
-        party_obj = self.pool.get('party.party')
-        address_obj = self.pool.get('party.address')
-        contact_mechanism_obj = self.pool.get('party.contact_mechanism')
+        pool = Pool()
+        party_obj = pool.get('party.party')
+        address_obj = pool.get('party.address')
+        contact_mechanism_obj = pool.get('party.contact_mechanism')
 
         cursor = Transaction().cursor
 
@@ -244,7 +246,7 @@ class Collection(ModelSQL, ModelView):
         return super(Collection, self).get_lastmodified(uri, cache=cache)
 
     def get_data(self, uri, cache=None):
-        vcard_obj = self.pool.get('party_vcarddav.party.vcard', type='report')
+        vcard_obj = Pool().get('party_vcarddav.party.vcard', type='report')
         party_id = self.vcard(uri)
         if party_id is None:
             raise DAV_NotFound
@@ -256,7 +258,7 @@ class Collection(ModelSQL, ModelView):
         return super(Collection, self).get_data(uri, cache=cache)
 
     def get_address_data(self, uri, cache=None):
-        vcard_obj = self.pool.get('party_vcarddav.party.vcard', type='report')
+        vcard_obj = Pool().get('party_vcarddav.party.vcard', type='report')
         party_id = self.vcard(uri)
         if not party_id:
             raise DAV_NotFound
@@ -268,7 +270,7 @@ class Collection(ModelSQL, ModelView):
 
     def put(self, uri, data, content_type, cache=None):
         import vobject
-        party_obj = self.pool.get('party.party')
+        party_obj = Pool().get('party.party')
 
         party_id = self.vcard(uri)
         if party_id is None:
@@ -308,7 +310,7 @@ class Collection(ModelSQL, ModelView):
         return super(Collection, self).rmcol(uri, cache=cache)
 
     def rm(self, uri, cache=None):
-        party_obj = self.pool.get('party.party')
+        party_obj = Pool().get('party.party')
 
         party_id = self.vcard(uri)
         if party_id is None:
