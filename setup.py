@@ -60,4 +60,6 @@ setup(name='trytond_party_vcarddav',
     [trytond.modules]
     party_vcarddav = trytond.modules.party_vcarddav
     """,
+    test_suite='tests',
+    test_loader='trytond.test_loader:Loader',
 )
