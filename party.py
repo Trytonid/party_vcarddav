@@ -49,6 +49,13 @@ class Party(ModelSQL, ModelView):
         collection_obj.vcard.reset()
         return res
 
+    def copy(self, ids, default=None):
+        if default is None:
+            default = {}
+        default = default.copy()
+        default['uuid'] = self.default_uuid()
+        return super(Party, self).copy(ids, default=default)
+
     def write(self, ids, vals):
         collection_obj = Pool().get('webdav.collection')
 
