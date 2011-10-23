@@ -21,7 +21,3 @@ msgstr "Универсален иникален идентификатор"
 msgctxt "model:ir.action,name:report_party_vcard"
 msgid "VCard"
 msgstr "VCard"
-
-msgctxt "selection:ir.action.report,extension:0"
-msgid "VCard file"
-msgstr "VCard файл"
