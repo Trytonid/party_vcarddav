@@ -1,7 +1,6 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 import base64
-import urlparse
 from DAV.errors import DAV_NotFound, DAV_Forbidden
 from trytond.model import ModelView, ModelSQL
 from trytond.tools import reduce_ids
