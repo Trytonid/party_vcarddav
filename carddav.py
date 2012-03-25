@@ -1,7 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-from DAV import propfind
-from DAV.errors import *
+from pywebdav.lib import propfind
+from pywebdav.lib.errors import *
 from trytond.protocols.webdav import TrytonDAVInterface, CACHE
 from trytond.pool import Pool
 from trytond.transaction import Transaction
