@@ -6,8 +6,6 @@ from trytond.protocols.webdav import TrytonDAVInterface, CACHE
 from trytond.pool import Pool
 from trytond.transaction import Transaction
 
-_TRYTON_RELOAD = False
-
 TrytonDAVInterface.PROPS['urn:ietf:params:xml:ns:carddav'] = (
         'address-data',
         'addressbook-data',
