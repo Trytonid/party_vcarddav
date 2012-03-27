@@ -83,7 +83,7 @@ class Collection(ModelSQL, ModelView):
                     else:
                         res2.append('OR')
                     if prop.getElementsByTagNameNS(CARDDAV_NS, 'is-not-defined'):
-                        res2.append((field, '=', False))
+                        res2.append((field, '=', None))
                     for text_match in prop.getElementsByTagNameNS(CARDDAV_NS,
                             'text-match'):
                         value = text_match.firstChild.data
