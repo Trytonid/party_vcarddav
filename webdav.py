@@ -77,12 +77,14 @@ class Collection(ModelSQL, ModelView):
                     field = 'value'
                 if field:
                     res2 = []
-                    if prop.hasAttribute('test') \
-                            and prop.addressbook_filter.getAttribute('test') == 'allof':
+                    if (prop.hasAttribute('test')
+                            and (prop.addressbook_filter.getAttribute('test')
+                                == 'allof')):
                         res2.append('AND')
                     else:
                         res2.append('OR')
-                    if prop.getElementsByTagNameNS(CARDDAV_NS, 'is-not-defined'):
+                    if prop.getElementsByTagNameNS(CARDDAV_NS,
+                            'is-not-defined'):
                         res2.append((field, '=', None))
                     for text_match in prop.getElementsByTagNameNS(CARDDAV_NS,
                             'text-match'):
@@ -219,20 +221,20 @@ class Collection(ModelSQL, ModelView):
             for i in range(0, len(ids), cursor.IN_MAX):
                 sub_ids = ids[i:i + cursor.IN_MAX]
                 red_sql, red_ids = reduce_ids('p.id', sub_ids)
-                cursor.execute('SELECT p.id, ' \
-                            'MAX(EXTRACT(epoch FROM ' \
-                                'COALESCE(p.write_date, p.create_date))), ' \
-                            'MAX(EXTRACT(epoch FROM ' \
-                                'COALESCE(a.write_date, a.create_date))), ' \
-                            'MAX(EXTRACT(epoch FROM ' \
-                                'COALESCE(c.write_date, c.create_date))) ' \
-                        'FROM "' + party_obj._table + '" p ' \
-                            'LEFT JOIN "' + address_obj._table + '" a ' \
-                            'ON p.id = a.party ' \
-                            'LEFT JOIN "' + contact_mechanism_obj._table + '" c ' \
-                            'ON p.id = c.party ' \
-                        'WHERE ' + red_sql + ' ' \
-                        'GROUP BY p.id', red_ids)
+                cursor.execute('SELECT p.id, '
+                        'MAX(EXTRACT(epoch FROM '
+                            'COALESCE(p.write_date, p.create_date))), '
+                        'MAX(EXTRACT(epoch FROM '
+                            'COALESCE(a.write_date, a.create_date))), '
+                        'MAX(EXTRACT(epoch FROM '
+                            'COALESCE(c.write_date, c.create_date))) '
+                    'FROM "' + party_obj._table + '" p '
+                    'LEFT JOIN "' + address_obj._table + '" a '
+                        'ON p.id = a.party '
+                    'LEFT JOIN "' + contact_mechanism_obj._table + '" c '
+                        'ON p.id = c.party '
+                    'WHERE ' + red_sql + ' '
+                    'GROUP BY p.id', red_ids)
                 for party_id2, date_p, date_a, date_c in cursor.fetchall():
                     date = max(date_p, date_a, date_c)
                     if party_id2 == party_id:
@@ -290,7 +292,8 @@ class Collection(ModelSQL, ModelView):
             except Exception:
                 raise DAV_Forbidden
             return
-        return super(Collection, self).put(uri, data, content_type, cache=cache)
+        return super(Collection, self).put(uri, data, content_type,
+            cache=cache)
 
     def mkcol(self, uri, cache=None):
         party_id = self.vcard(uri)

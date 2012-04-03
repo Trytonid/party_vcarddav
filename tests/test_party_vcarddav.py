@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-import sys, os
+import sys
+import os
 DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
     '..', '..', '..', '..', '..', 'trytond')))
 if os.path.isdir(DIR):
@@ -26,7 +27,8 @@ class PartyVCardDAVTestCase(unittest.TestCase):
 
 def suite():
     suite = trytond.tests.test_tryton.suite()
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PartyVCardDAVTestCase))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
+            PartyVCardDAVTestCase))
     return suite
 
 if __name__ == '__main__':

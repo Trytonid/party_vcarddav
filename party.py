@@ -272,7 +272,8 @@ class VCard(Report):
 
         parties = party_obj.browse(ids)
 
-        data = ''.join(self.create_vcard(party).serialize() for party in parties)
+        data = ''.join(self.create_vcard(party).serialize()
+            for party in parties)
 
         return ('vcf', base64.encodestring(data), False, action_report.name)
 
