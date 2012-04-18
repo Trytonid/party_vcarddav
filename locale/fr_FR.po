@@ -2,22 +2,42 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
-msgctxt "error:party.party:0"
+msgctxt "error:party.party:"
 msgid "The UUID of the party must be unique!"
 msgstr "L'UUID du tiers doit être unique !"
 
-msgctxt "field:party.party,uuid:0"
+msgctxt "error:party.party:"
+msgid "The UUID of the party must be unique!"
+msgstr "L'UUID du tiers doit être unique !"
+
+msgctxt "field:party.party,uuid:"
 msgid "UUID"
 msgstr "UUID"
 
-msgctxt "field:party.party,vcard:0"
+msgctxt "field:party.party,vcard:"
 msgid "VCard"
 msgstr "VCard"
 
-msgctxt "help:party.party,uuid:0"
+msgctxt "help:party.party,uuid:"
 msgid "Universally Unique Identifier"
 msgstr "Identificateur unique universel"
 
 msgctxt "model:ir.action,name:report_party_vcard"
 msgid "VCard"
 msgstr "VCard"
+
+msgctxt "model:ir.action.report,name:"
+msgid ""
+msgstr ""
+
+msgctxt "model:party.address,name:"
+msgid ""
+msgstr ""
+
+msgctxt "model:party.party,name:"
+msgid ""
+msgstr ""
+
+msgctxt "model:webdav.collection,name:"
+msgid ""
+msgstr ""
