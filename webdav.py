@@ -1,6 +1,5 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-import base64
 from pywebdav.lib.errors import DAV_NotFound, DAV_Forbidden
 from trytond.model import ModelView, ModelSQL
 from trytond.tools import reduce_ids
@@ -255,7 +254,7 @@ class Collection(ModelSQL, ModelView):
             val = vcard_obj.execute([party_id],
                     {'id': party_id, 'ids': [party_id]},
                     )
-            return base64.decodestring(val[1])
+            return val[1]
         return super(Collection, self).get_data(uri, cache=cache)
 
     def get_address_data(self, uri, cache=None):
@@ -263,11 +262,9 @@ class Collection(ModelSQL, ModelView):
         party_id = self.vcard(uri)
         if not party_id:
             raise DAV_NotFound
-        val = vcard_obj.execute([party_id],
-                {'id': party_id, 'ids': [party_id]},
-                )
-        res = base64.decodestring(val[1])
-        return res.decode('utf-8')
+        return vcard_obj.execute([party_id],
+            {'id': party_id, 'ids': [party_id]},
+            ).decode('utf-8')
 
     def put(self, uri, data, content_type, cache=None):
         import vobject
