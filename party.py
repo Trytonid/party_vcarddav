@@ -1,6 +1,5 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-import base64
 import copy
 import uuid
 from trytond.model import ModelSQL, ModelView, fields
@@ -274,7 +273,7 @@ class VCard(Report):
 
         data = ''.join(self.create_vcard(party).serialize() for party in parties)
 
-        return ('vcf', base64.encodestring(data), False, action_report.name)
+        return ('vcf', buffer(data), False, action_report.name)
 
     def create_vcard(self, party):
         '''
