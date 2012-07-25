@@ -286,7 +286,7 @@ class VCard(Report):
         import vobject
 
         if party.vcard:
-            vcard = vobject.readOne(party.vcard)
+            vcard = vobject.readOne(str(party.vcard))
         else:
             vcard = vobject.vCard()
         if not hasattr(vcard, 'n'):
