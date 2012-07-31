@@ -49,11 +49,23 @@ class Party(ModelSQL, ModelView):
         return res
 
     def copy(self, ids, default=None):
+        int_id = isinstance(ids, (int, long))
+        if int_id:
+            ids = [ids]
+
         if default is None:
             default = {}
-        default = default.copy()
-        default['uuid'] = self.default_uuid()
-        return super(Party, self).copy(ids, default=default)
+
+        new_ids = []
+        for party_id in ids:
+            current_default = default.copy()
+            current_default['uuid'] = self.default_uuid()
+            new_id = super(Party, self).copy(party_id, default=current_default)
+            new_ids.append(new_id)
+
+        if int_id:
+            return new_ids[0]
+        return new_ids
 
     def write(self, ids, vals):
         collection_obj = self.pool.get('webdav.collection')
