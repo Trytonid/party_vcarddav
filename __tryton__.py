@@ -8,7 +8,7 @@
     'name_es_CO' : 'vCardDAV de Compañía',
     'name_es_ES' : 'Tercero - vCardDAV',
     'name_fr_FR': 'Tiers - vCardDAV',
-    'version' : '2.2.1',
+    'version' : '2.2.2',
     'author' : 'B2CK',
     'email': 'info@b2ck.com',
     'website': 'http://www.tryton.org/',
