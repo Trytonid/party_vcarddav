@@ -1,98 +1,95 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-import copy
 import uuid
-from trytond.model import ModelSQL, ModelView, fields
+import vobject
+
+from trytond.model import fields
 from trytond.report import Report
 from trytond.backend import TableHandler, FIELDS
 from trytond.transaction import Transaction
-from trytond.pool import Pool
+from trytond.pool import Pool, PoolMeta
+
+__all__ = ['Party', 'Address', 'ActionReport', 'VCard']
+__metaclass__ = PoolMeta
 
 
-class Party(ModelSQL, ModelView):
-    _name = 'party.party'
+class Party:
+    __name__ = 'party.party'
     uuid = fields.Char('UUID', required=True,
             help='Universally Unique Identifier')
     vcard = fields.Binary('VCard')
 
-    def __init__(self):
-        super(Party, self).__init__()
-        self._sql_constraints += [
-                ('uuid_uniq', 'UNIQUE(uuid)',
-                    'The UUID of the party must be unique!'),
-        ]
+    @classmethod
+    def __setup__(cls):
+        super(Party, cls).__setup__()
+        cls._sql_constraints += [
+            ('uuid_uniq', 'UNIQUE(uuid)',
+                'The UUID of the party must be unique!'),
+            ]
 
-    def init(self, module_name):
+    @classmethod
+    def __register__(cls, module_name):
         cursor = Transaction().cursor
-        table = TableHandler(cursor, self, module_name)
+        table = TableHandler(cursor, cls, module_name)
 
         if not table.column_exist('uuid'):
             table.add_raw_column('uuid',
-                    FIELDS[self.uuid._type].sql_type(self.uuid),
-                    FIELDS[self.uuid._type].sql_format, None, None)
-            cursor.execute('SELECT id FROM "' + self._table + '"')
+                FIELDS[cls.uuid._type].sql_type(cls.uuid),
+                FIELDS[cls.uuid._type].sql_format, None, None)
+            cursor.execute('SELECT id FROM "' + cls._table + '"')
             for id, in cursor.fetchall():
-                cursor.execute('UPDATE "' + self._table + '" ' \
-                        'SET "uuid" = %s WHERE id = %s',
-                        (self.default_uuid(), id))
-        super(Party, self).init(module_name)
+                cursor.execute('UPDATE "' + cls._table + '" '
+                    'SET "uuid" = %s WHERE id = %s',
+                    (cls.default_uuid(), id))
+        super(Party, cls).__register__(module_name)
 
-    def default_uuid(self):
+    @staticmethod
+    def default_uuid():
         return str(uuid.uuid4())
 
-    def create(self, vals):
-        collection_obj = Pool().get('webdav.collection')
+    @classmethod
+    def create(cls, vals):
+        Collection = Pool().get('webdav.collection')
 
-        res = super(Party, self).create(vals)
+        party = super(Party, cls).create(vals)
         # Restart the cache for vcard
-        collection_obj.vcard.reset()
-        return res
+        Collection._vcard_cache.clear()
+        return party
 
-    def copy(self, ids, default=None):
-        int_id = isinstance(ids, (int, long))
-        if int_id:
-            ids = [ids]
-
+    @classmethod
+    def copy(cls, parties, default=None):
         if default is None:
             default = {}
-
-        new_ids = []
-        for party_id in ids:
+        new_parties = []
+        for party in parties:
             current_default = default.copy()
-            current_default['uuid'] = self.default_uuid()
-            new_id = super(Party, self).copy(party_id, default=current_default)
-            new_ids.append(new_id)
+            current_default['uuid'] = cls.default_uuid()
+            new_party, = super(Party, cls).copy([party],
+                default=current_default)
+            new_parties.append(new_party)
+        return new_parties
 
-        if int_id:
-            return new_ids[0]
-        return new_ids
+    @classmethod
+    def write(cls, parties, vals):
+        Collection = Pool().get('webdav.collection')
 
-    def write(self, ids, vals):
-        collection_obj = Pool().get('webdav.collection')
-
-        res = super(Party, self).write(ids, vals)
+        super(Party, cls).write(parties, vals)
         # Restart the cache for vcard
-        collection_obj.vcard.reset()
-        return res
+        Collection._vcard_cache.clear()
 
-    def delete(self, ids):
-        collection_obj = Pool().get('webdav.collection')
+    @classmethod
+    def delete(cls, parties):
+        Collection = Pool().get('webdav.collection')
 
-        res = super(Party, self).delete(ids)
+        super(Party, cls).delete(parties)
         # Restart the cache for vcard
-        collection_obj.vcard.reset()
-        return res
+        Collection._vcard_cache.clear()
 
-    def vcard2values(self, party_id, vcard):
+    def vcard2values(self, vcard):
         '''
         Convert vcard to values for create or write
-
-        :param party_id: the party id for write or None for create
-        :param vcard: a vcard instance of vobject
-        :return: a dictionary with values
         '''
-        import vobject
-        address_obj = Pool().get('party.address')
+        Address = Pool().get('party.address')
 
         res = {}
         res['name'] = vcard.fn.value
@@ -100,12 +97,12 @@ class Party(ModelSQL, ModelView):
             vcard.add('n')
             vcard.n.value = vobject.vcard.Name(vcard.fn.value)
         res['vcard'] = vcard.serialize()
-        if not party_id:
+        if not self.id:
             if hasattr(vcard, 'uid'):
                 res['uuid'] = vcard.uid.value
             res['addresses'] = []
             for adr in vcard.contents.get('adr', []):
-                vals = address_obj.vcard2values(adr)
+                vals = Address.vcard2values(adr)
                 res['addresses'].append(('create', vals))
             res['contact_mechanisms'] = []
             for email in vcard.contents.get('email', []):
@@ -122,11 +119,10 @@ class Party(ModelSQL, ModelView):
                 vals['value'] = tel.value
                 res['contact_mechanisms'].append(('create', vals))
         else:
-            party = self.browse(party_id)
             i = 0
             res['addresses'] = []
             addresses_todelete = []
-            for address in party.addresses:
+            for address in self.addresses:
                 try:
                     adr = vcard.contents.get('adr', [])[i]
                 except IndexError:
@@ -137,8 +133,8 @@ class Party(ModelSQL, ModelView):
                     addresses_todelete.append(address.id)
                     i += 1
                     continue
-                vals = address_obj.vcard2values(adr)
-                res['addresses'].append(('write', address.id, vals))
+                vals = Address.vcard2values(adr)
+                res['addresses'].append(('write', [address.id], vals))
                 i += 1
             if addresses_todelete:
                 res['addresses'].append(('delete', addresses_todelete))
@@ -149,13 +145,13 @@ class Party(ModelSQL, ModelView):
             for adr in new_addresses:
                 if not hasattr(adr, 'value'):
                     continue
-                vals = address_obj.vcard2values(adr)
+                vals = Address.vcard2values(adr)
                 res['addresses'].append(('create', vals))
 
             i = 0
             res['contact_mechanisms'] = []
             contact_mechanisms_todelete = []
-            for cm in party.contact_mechanisms:
+            for cm in self.contact_mechanisms:
                 if cm.type != 'email':
                     continue
                 try:
@@ -181,7 +177,7 @@ class Party(ModelSQL, ModelView):
                 res['contact_mechanisms'].append(('create', vals))
 
             i = 0
-            for cm in party.contact_mechanisms:
+            for cm in self.contact_mechanisms:
                 if cm.type not in ('phone', 'mobile'):
                     continue
                 try:
@@ -214,89 +210,79 @@ class Party(ModelSQL, ModelView):
                     contact_mechanisms_todelete))
         return res
 
-Party()
 
-
-class Address(ModelSQL, ModelView):
-    _name = 'party.address'
+class Address:
+    __name__ = 'party.address'
 
     def vcard2values(self, adr):
         '''
         Convert adr from vcard to values for create or write
-
-        :param adr: a adr from vcard instance of vobject
-        :return: a dictionary with values
         '''
-        country_obj = Pool().get('country.country')
-        subdivision_obj = Pool().get('country.subdivision')
+        pool = Pool()
+        Country = pool.get('country.country')
+        Subdivision = pool.get('country.subdivision')
 
         vals = {}
         vals['street'] = adr.value.street or ''
         vals['city'] = adr.value.city or ''
         vals['zip'] = adr.value.code or ''
         if adr.value.country:
-            country_ids = country_obj.search([
-                ('rec_name', '=', adr.value.country),
-                ], limit=1)
-            if country_ids:
-                vals['country'] = country_ids[0]
+            countries = Country.search([
+                    ('rec_name', '=', adr.value.country),
+                    ], limit=1)
+            if countries:
+                country, = countries
+                vals['country'] = country.id
                 if adr.value.region:
-                    subdivision_ids = subdivision_obj.search([
+                    subdivisions = Subdivision.search([
                             ('rec_name', '=', adr.value.region),
-                            ('country', '=', country_ids[0]),
+                            ('country', '=', country.id),
                             ], limit=1)
-                    if subdivision_ids:
-                        vals['subdivision'] = subdivision_ids[0]
+                    if subdivisions:
+                        subdivision, = subdivisions
+                        vals['subdivision'] = subdivision.id
         return vals
 
-Address()
 
+class ActionReport:
+    __name__ = 'ir.action.report'
 
-class ActionReport(ModelSQL, ModelView):
-    _name = 'ir.action.report'
-
-    def __init__(self):
-        super(ActionReport, self).__init__()
+    @classmethod
+    def __setup__(cls):
+        super(ActionReport, cls).__setup__()
         new_ext = ('vcf', 'VCard file')
-        if new_ext not in self.extension.selection:
-            self.extension = copy.copy(self.extension)
-            self.extension.selection = copy.copy(self.extension.selection)
-            self.extension.selection.append(new_ext)
-            self._reset_columns()
-
-ActionReport()
+        if new_ext not in cls.extension.selection:
+            cls.extension.selection.append(new_ext)
 
 
 class VCard(Report):
-    _name = 'party_vcarddav.party.vcard'
+    __name__ = 'party_vcarddav.party.vcard'
 
-    def execute(self, ids, datas):
-        party_obj = Pool().get('party.party')
-        action_report_obj = Pool().get('ir.action.report')
+    @classmethod
+    def execute(cls, ids, data):
+        pool = Pool()
+        Party = pool.get('party.party')
+        ActionReport = pool.get('ir.action.report')
 
-        action_report_ids = action_report_obj.search([
-            ('report_name', '=', self._name)
-            ])
-        if not action_report_ids:
-            raise Exception('Error', 'Report (%s) not find!' % self._name)
-        action_report = action_report_obj.browse(action_report_ids[0])
+        action_reports = ActionReport.search([
+                ('report_name', '=', cls.__name__)
+                ])
+        if not action_reports:
+            raise Exception('Error', 'Report (%s) not find!' % cls.__name__)
+        action_report = action_reports[0]
 
-        parties = party_obj.browse(ids)
+        parties = Party(ids)
 
-        data = ''.join(self.create_vcard(party).serialize()
+        data = ''.join(cls.create_vcard(party).serialize()
             for party in parties)
 
         return ('vcf', buffer(data), False, action_report.name)
 
-    def create_vcard(self, party):
+    @classmethod
+    def create_vcard(cls, party):
         '''
         Return a vcard instance of vobject for the party
-
-        :param party: a BrowseRecord of party.party
-        :return: a vcard instance of vobject
         '''
-        import vobject
-
         if party.vcard:
             vcard = vobject.readOne(str(party.vcard))
         else:
@@ -387,5 +373,3 @@ class VCard(Report):
             vcard.contents['tel'].remove(tel)
 
         return vcard
-
-VCard()

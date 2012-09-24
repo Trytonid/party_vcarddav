@@ -1,53 +1,56 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 from pywebdav.lib.errors import DAV_NotFound, DAV_Forbidden
-from trytond.model import ModelView, ModelSQL
 from trytond.tools import reduce_ids
 from trytond.transaction import Transaction
 from trytond.cache import Cache
-from trytond.pool import Pool
+from trytond.pool import Pool, PoolMeta
+
+__all__ = ['Collection']
+__metaclass__ = PoolMeta
 
 
 CARDDAV_NS = 'urn:ietf:params:xml:ns:carddav'
 
 
-class Collection(ModelSQL, ModelView):
+class Collection:
+    __name__ = "webdav.collection"
+    _vcard_cache = Cache('webdav.collection.vcard', context=False)
 
-    _name = "webdav.collection"
-
-    @Cache('webdav_collection.vcard')
-    def vcard(self, uri):
+    @classmethod
+    def vcard(cls, uri):
         '''
         Return party ids of the vcard in uri or False
-
-        :param uri: the uri
-        :return: party id
-            or None if there is no party
-            or False if not in Contacts
         '''
-        party_obj = Pool().get('party.party')
+        Party = Pool().get('party.party')
+        party_id = cls._vcard_cache.get(uri, -1)
+        if party_id != -1:
+            return party_id
 
         if uri and uri.startswith('Contacts/'):
             uuid = uri[9:-4]
-            party_ids = party_obj.search([
-                ('uuid', '=', uuid),
-                ], limit=1)
-            if party_ids:
-                return party_ids[0]
-            return None
-        if uri == 'Contacts':
-            return None
-        return False
+            parties = Party.search([
+                    ('uuid', '=', uuid),
+                    ], limit=1)
+            if parties:
+                party_id = parties[0].id
+            else:
+                party_id = None
+        elif uri == 'Contacts':
+            party_id = None
+        else:
+            party_id = False
+        cls._vcard_cache.set(uri, party_id)
+        return party_id
 
-    def _carddav_filter_domain(self, filter):
+    @classmethod
+    def _carddav_filter_domain(cls, filter):
         '''
         Return a domain for the carddav filter
-
-        :param filter: the DOM Element of filter
-        :return: a list for domain
         '''
-        address_obj = Pool().get('party.address')
-        contact_mechanism_obj = Pool().get('party.contact_mechanism')
+        pool = Pool()
+        Address = pool.get('party.address')
+        ContactMechanism = pool.get('party.contact_mechanism')
 
         res = []
         if not filter:
@@ -110,60 +113,64 @@ class Collection(ModelSQL, ModelView):
                             res2.append((field, 'not ilike', value))
                     if name == 'adr':
                         domain = res2
-                        address_ids = address_obj.search(domain)
-                        res = [('addresses', 'in', address_ids)]
+                        addresses = Address.search(domain)
+                        res = [('addresses', 'in', [a.id for a in addresses])]
                     elif name in ('mail', 'tel'):
                         if name == 'mail':
                             type = ['email']
                         else:
                             type = ['phone', 'mobile']
                         domain = [('type', 'in', type), res2]
-                        contact_mechanism_ids = contact_mechanism_obj.search(
-                                domain)
+                        contact_mechanisms = ContactMechanism.search(
+                            domain)
                         res2 = [
-                            ('contact_mechanisms', 'in', contact_mechanism_ids)
+                            ('contact_mechanisms', 'in',
+                                [c.id for c in contact_mechanisms])
                             ]
                     res.append(res2)
         return res
 
-    def get_childs(self, uri, filter=None, cache=None):
-        party_obj = Pool().get('party.party')
+    @classmethod
+    def get_childs(cls, uri, filter=None, cache=None):
+        Party = Pool().get('party.party')
 
         if uri in ('Contacts', 'Contacts/'):
-            domain = self._carddav_filter_domain(filter)
-            party_ids = party_obj.search(domain)
-            parties = party_obj.browse(party_ids)
+            domain = cls._carddav_filter_domain(filter)
+            parties = Party.search(domain)
             if cache is not None:
                 cache.setdefault('_contact', {})
-                for party_id in party_ids:
-                    cache['_contact'][party_id] = {}
+                for party in parties:
+                    cache['_contact'][party.id] = {}
             return [x.uuid + '.vcf' for x in parties]
-        party_id = self.vcard(uri)
+        party_id = cls.vcard(uri)
         if party_id or party_id is None:
             return []
-        res = super(Collection, self).get_childs(uri, filter=filter,
+        res = super(Collection, cls).get_childs(uri, filter=filter,
                 cache=cache)
         if not uri and not filter:
             res.append('Contacts')
         return res
 
-    def get_resourcetype(self, uri, cache=None):
+    @classmethod
+    def get_resourcetype(cls, uri, cache=None):
         from DAV.constants import COLLECTION, OBJECT
-        party_id = self.vcard(uri)
+        party_id = cls.vcard(uri)
         if party_id:
             return OBJECT
         elif party_id is None:
             return COLLECTION
-        return super(Collection, self).get_resourcetype(uri, cache=cache)
+        return super(Collection, cls).get_resourcetype(uri, cache=cache)
 
-    def get_contenttype(self, uri, cache=None):
-        if self.vcard(uri):
+    @classmethod
+    def get_contenttype(cls, uri, cache=None):
+        if cls.vcard(uri):
             return 'text/x-vcard'
-        return super(Collection, self).get_contenttype(uri, cache=cache)
+        return super(Collection, cls).get_contenttype(uri, cache=cache)
 
-    def get_creationdate(self, uri, cache=None):
-        party_obj = Pool().get('party.party')
-        party_id = self.vcard(uri)
+    @classmethod
+    def get_creationdate(cls, uri, cache=None):
+        Party = Pool().get('party.party')
+        party_id = cls.vcard(uri)
 
         cursor = Transaction().cursor
 
@@ -185,7 +192,7 @@ class Collection(ModelSQL, ModelView):
                 red_sql, red_ids = reduce_ids('id', sub_ids)
                 cursor.execute('SELECT id, ' \
                             'EXTRACT(epoch FROM create_date) ' \
-                        'FROM "' + party_obj._table + '" ' \
+                        'FROM "' + Party._table + '" ' \
                         'WHERE ' + red_sql, red_ids)
                 for party_id2, date in cursor.fetchall():
                     if party_id2 == party_id:
@@ -195,17 +202,18 @@ class Collection(ModelSQL, ModelView):
                         cache['_contact'][party_id2]['creationdate'] = date
             if res is not None:
                 return res
-        return super(Collection, self).get_creationdate(uri, cache=cache)
+        return super(Collection, cls).get_creationdate(uri, cache=cache)
 
-    def get_lastmodified(self, uri, cache=None):
+    @classmethod
+    def get_lastmodified(cls, uri, cache=None):
         pool = Pool()
-        party_obj = pool.get('party.party')
-        address_obj = pool.get('party.address')
-        contact_mechanism_obj = pool.get('party.contact_mechanism')
+        Party = pool.get('party.party')
+        Address = pool.get('party.address')
+        ContactMechanism = pool.get('party.contact_mechanism')
 
         cursor = Transaction().cursor
 
-        party_id = self.vcard(uri)
+        party_id = cls.vcard(uri)
         if party_id:
             if cache is not None:
                 cache.setdefault('_contact', {})
@@ -227,10 +235,10 @@ class Collection(ModelSQL, ModelView):
                             'COALESCE(a.write_date, a.create_date))), '
                         'MAX(EXTRACT(epoch FROM '
                             'COALESCE(c.write_date, c.create_date))) '
-                    'FROM "' + party_obj._table + '" p '
-                    'LEFT JOIN "' + address_obj._table + '" a '
+                    'FROM "' + Party._table + '" p '
+                    'LEFT JOIN "' + Address._table + '" a '
                         'ON p.id = a.party '
-                    'LEFT JOIN "' + contact_mechanism_obj._table + '" c '
+                    'LEFT JOIN "' + ContactMechanism._table + '" c '
                         'ON p.id = c.party '
                     'WHERE ' + red_sql + ' '
                     'GROUP BY p.id', red_ids)
@@ -243,93 +251,98 @@ class Collection(ModelSQL, ModelView):
                         cache['_contact'][party_id2]['lastmodified'] = date
             if res is not None:
                 return res
-        return super(Collection, self).get_lastmodified(uri, cache=cache)
+        return super(Collection, cls).get_lastmodified(uri, cache=cache)
 
-    def get_data(self, uri, cache=None):
-        vcard_obj = Pool().get('party_vcarddav.party.vcard', type='report')
-        party_id = self.vcard(uri)
+    @classmethod
+    def get_data(cls, uri, cache=None):
+        Vcard = Pool().get('party_vcarddav.party.vcard', type='report')
+        party_id = cls.vcard(uri)
         if party_id is None:
             raise DAV_NotFound
         if party_id:
-            val = vcard_obj.execute([party_id],
-                    {'id': party_id, 'ids': [party_id]},
-                    )
+            val = Vcard.execute([party_id],
+                {'id': party_id, 'ids': [party_id]})
             return val[1]
-        return super(Collection, self).get_data(uri, cache=cache)
+        return super(Collection, cls).get_data(uri, cache=cache)
 
-    def get_address_data(self, uri, cache=None):
-        vcard_obj = Pool().get('party_vcarddav.party.vcard', type='report')
-        party_id = self.vcard(uri)
+    @classmethod
+    def get_address_data(cls, uri, cache=None):
+        Vcard = Pool().get('party_vcarddav.party.vcard', type='report')
+        party_id = cls.vcard(uri)
         if not party_id:
             raise DAV_NotFound
-        return vcard_obj.execute([party_id],
+        return Vcard.execute([party_id],
             {'id': party_id, 'ids': [party_id]},
             ).decode('utf-8')
 
-    def put(self, uri, data, content_type, cache=None):
+    @classmethod
+    def put(cls, uri, data, content_type, cache=None):
         import vobject
-        party_obj = Pool().get('party.party')
+        Party = Pool().get('party.party')
 
-        party_id = self.vcard(uri)
+        party_id = cls.vcard(uri)
         if party_id is None:
             vcard = vobject.readOne(data)
-            values = party_obj.vcard2values(None, vcard)
+            values = Party().vcard2values(vcard)
             try:
-                party_id = party_obj.create(values)
+                party_id = Party.create(values)
             except Exception:
                 raise DAV_Forbidden
-            party = party_obj.browse(party_id)
+            party = Party(party_id)
             return (Transaction().cursor.database_name + '/Contacts/' +
                     party.uuid + '.vcf')
         if party_id:
+            party = Party(party_id)
             vcard = vobject.readOne(data)
-            values = party_obj.vcard2values(party_id, vcard)
+            values = party.vcard2values(vcard)
             try:
-                party_obj.write(party_id, values)
+                Party.write([party], values)
             except Exception:
                 raise DAV_Forbidden
             return
-        return super(Collection, self).put(uri, data, content_type,
+        return super(Collection, cls).put(uri, data, content_type,
             cache=cache)
 
-    def mkcol(self, uri, cache=None):
-        party_id = self.vcard(uri)
+    @classmethod
+    def mkcol(cls, uri, cache=None):
+        party_id = cls.vcard(uri)
         if party_id is None:
             raise DAV_Forbidden
         if party_id:
             raise DAV_Forbidden
-        return super(Collection, self).mkcol(uri, cache=cache)
+        return super(Collection, cls).mkcol(uri, cache=cache)
 
-    def rmcol(self, uri, cache=None):
-        party_id = self.vcard(uri)
+    @classmethod
+    def rmcol(cls, uri, cache=None):
+        party_id = cls.vcard(uri)
         if party_id is None:
             raise DAV_Forbidden
         if party_id:
             raise DAV_Forbidden
-        return super(Collection, self).rmcol(uri, cache=cache)
+        return super(Collection, cls).rmcol(uri, cache=cache)
 
-    def rm(self, uri, cache=None):
-        party_obj = Pool().get('party.party')
+    @classmethod
+    def rm(cls, uri, cache=None):
+        Party = Pool().get('party.party')
 
-        party_id = self.vcard(uri)
+        party_id = cls.vcard(uri)
         if party_id is None:
             raise DAV_Forbidden
         if party_id:
             try:
-                party_obj.delete(party_id)
+                Party.delete([Party(party_id)])
             except Exception:
                 raise DAV_Forbidden
             return 200
-        return super(Collection, self).rm(uri, cache=cache)
+        return super(Collection, cls).rm(uri, cache=cache)
 
-    def exists(self, uri, cache=None):
-        party_id = self.vcard(uri)
+    @classmethod
+    def exists(cls, uri, cache=None):
+        party_id = cls.vcard(uri)
         if party_id is None or party_id:
             if party_id:
                 return 1
             if uri in ('Contacts', 'Contacts/'):
                 return 1
             return 0
-        return super(Collection, self).exists(uri, cache=cache)
-
-Collection()
+        return super(Collection, cls).exists(uri, cache=cache)

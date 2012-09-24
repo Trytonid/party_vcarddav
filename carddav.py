@@ -38,16 +38,15 @@ def _get_carddav_address_data(self, uri):
         raise DAV_NotFound
     pool = Pool(Transaction().cursor.database_name)
     try:
-        collection_obj = pool.get('webdav.collection')
+        Collection = pool.get('webdav.collection')
     except KeyError:
         raise DAV_NotFound
     try:
-        res = collection_obj.get_address_data(dburi, cache=CACHE)
+        return Collection.get_address_data(dburi, cache=CACHE)
     except DAV_Error:
         raise
     except Exception:
         raise DAV_Error(500)
-    return res
 
 TrytonDAVInterface._get_carddav_address_data = _get_carddav_address_data
 TrytonDAVInterface._get_carddav_addressbook_data = _get_carddav_address_data
