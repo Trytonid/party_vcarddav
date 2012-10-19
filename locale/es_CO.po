@@ -4,7 +4,7 @@ msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "error:party.party:"
 msgid "The UUID of the party must be unique!"
-msgstr "¡La UUID del tercero debe ser única!"
+msgstr "¡La UUID del tercero debe ser único!"
 
 msgctxt "field:party.party,uuid:"
 msgid "UUID"
