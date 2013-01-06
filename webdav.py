@@ -285,7 +285,7 @@ class Collection:
             vcard = vobject.readOne(data)
             values = Party().vcard2values(vcard)
             try:
-                party_id = Party.create(values)
+                party_id, = Party.create([values])
             except Exception:
                 raise DAV_Forbidden
             party = Party(party_id)

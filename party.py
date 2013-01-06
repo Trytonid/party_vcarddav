@@ -48,13 +48,13 @@ class Party:
         return str(uuid.uuid4())
 
     @classmethod
-    def create(cls, vals):
+    def create(cls, vlist):
         Collection = Pool().get('webdav.collection')
 
-        party = super(Party, cls).create(vals)
+        parties = super(Party, cls).create(vlist)
         # Restart the cache for vcard
         Collection._vcard_cache.clear()
-        return party
+        return parties
 
     @classmethod
     def copy(cls, parties, default=None):
@@ -101,15 +101,22 @@ class Party:
             if hasattr(vcard, 'uid'):
                 res['uuid'] = vcard.uid.value
             res['addresses'] = []
+            to_create = []
             for adr in vcard.contents.get('adr', []):
                 vals = Address.vcard2values(adr)
-                res['addresses'].append(('create', vals))
+                to_create.append(vals)
+            if to_create:
+                res['addresses'].append(('create', to_create))
             res['contact_mechanisms'] = []
+            to_create = []
             for email in vcard.contents.get('email', []):
                 vals = {}
                 vals['type'] = 'email'
                 vals['value'] = email.value
-                res['contact_mechanisms'].append(('create', vals))
+                to_create.append(vals)
+            if to_create:
+                res['contact_mechanisms'].append(('create', to_create))
+            to_create = []
             for tel in vcard.contents.get('tel', []):
                 vals = {}
                 vals['type'] = 'phone'
@@ -117,7 +124,9 @@ class Party:
                         and 'cell' in tel.type_param.lower():
                     vals['type'] = 'mobile'
                 vals['value'] = tel.value
-                res['contact_mechanisms'].append(('create', vals))
+                to_create.append(vals)
+            if to_create:
+                res['contact_mechanisms'].append(('create', to_create))
         else:
             i = 0
             res['addresses'] = []
@@ -142,11 +151,14 @@ class Party:
                 new_addresses = vcard.contents.get('adr', [])[i:]
             except IndexError:
                 new_addresses = []
+            to_create = []
             for adr in new_addresses:
                 if not hasattr(adr, 'value'):
                     continue
                 vals = Address.vcard2values(adr)
-                res['addresses'].append(('create', vals))
+                to_create.append(vals)
+            if to_create:
+                res['addresses'].append(('create', to_create))
 
             i = 0
             res['contact_mechanisms'] = []
@@ -168,13 +180,16 @@ class Party:
                 new_emails = vcard.contents.get('email', [])[i:]
             except IndexError:
                 new_emails = []
+            to_create = []
             for email in new_emails:
                 if not hasattr(email, 'value'):
                     continue
                 vals = {}
                 vals['type'] = 'email'
                 vals['value'] = email.value
-                res['contact_mechanisms'].append(('create', vals))
+                to_create.append(vals)
+            if to_create:
+                res['contact_mechanisms'].append(('create', to_create))
 
             i = 0
             for cm in self.contact_mechanisms:
@@ -194,6 +209,7 @@ class Party:
                 new_tels = vcard.contents.get('tel', [])[i:]
             except IndexError:
                 new_tels = []
+            to_create = []
             for tel in new_tels:
                 if not hasattr(tel, 'value'):
                     continue
@@ -203,7 +219,9 @@ class Party:
                         and 'cell' in tel.type_param.lower():
                     vals['type'] = 'mobile'
                 vals['value'] = tel.value
-                res['contact_mechanisms'].append(('create', vals))
+                to_create.append(vals)
+            if to_create:
+                res['contact_mechanisms'].append(('create', to_create))
 
             if contact_mechanisms_todelete:
                 res['contact_mechanisms'].append(('delete',
