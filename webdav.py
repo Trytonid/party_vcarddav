@@ -190,10 +190,10 @@ class Collection:
             for i in range(0, len(ids), cursor.IN_MAX):
                 sub_ids = ids[i:i + cursor.IN_MAX]
                 red_sql, red_ids = reduce_ids('id', sub_ids)
-                cursor.execute('SELECT id, ' \
-                            'EXTRACT(epoch FROM create_date) ' \
-                        'FROM "' + Party._table + '" ' \
-                        'WHERE ' + red_sql, red_ids)
+                cursor.execute('SELECT id, '
+                        'EXTRACT(epoch FROM create_date) '
+                    'FROM "' + Party._table + '" '
+                    'WHERE ' + red_sql, red_ids)
                 for party_id2, date in cursor.fetchall():
                     if party_id2 == party_id:
                         res = date

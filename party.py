@@ -327,7 +327,7 @@ class VCard(Report):
             if not hasattr(adr, 'value'):
                 adr.value = vobject.vcard.Address()
             adr.value.street = address.street and address.street + (
-                address.streetbis and  (" " + address.streetbis) or '') or ''
+                address.streetbis and (" " + address.streetbis) or '') or ''
             adr.value.city = address.city or ''
             if address.subdivision:
                 adr.value.region = address.subdivision.name or ''
