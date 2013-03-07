@@ -24,7 +24,7 @@ class Party:
         super(Party, cls).__setup__()
         cls._sql_constraints += [
             ('uuid_uniq', 'UNIQUE(uuid)',
-                'The UUID of the party must be unique!'),
+                'The UUID of the party must be unique.'),
             ]
 
     @classmethod
