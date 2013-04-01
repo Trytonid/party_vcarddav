@@ -1,6 +1,7 @@
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
 from pywebdav.lib.errors import DAV_NotFound, DAV_Forbidden
+from pywebdav.lib.constants import COLLECTION, OBJECT
 from trytond.model import ModelView, ModelSQL
 from trytond.tools import reduce_ids
 from trytond.transaction import Transaction
@@ -148,7 +149,6 @@ class Collection(ModelSQL, ModelView):
         return res
 
     def get_resourcetype(self, uri, cache=None):
-        from DAV.constants import COLLECTION, OBJECT
         party_id = self.vcard(uri)
         if party_id:
             return OBJECT
