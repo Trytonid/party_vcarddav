@@ -271,7 +271,7 @@ class VCard(Report):
             raise Exception('Error', 'Report (%s) not find!' % cls.__name__)
         action_report = action_reports[0]
 
-        parties = Party(ids)
+        parties = Party.browse(ids)
 
         data = ''.join(cls.create_vcard(party).serialize()
             for party in parties)
