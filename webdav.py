@@ -262,7 +262,7 @@ class Collection:
         if party_id:
             val = Vcard.execute([party_id],
                 {'id': party_id, 'ids': [party_id]})
-            return val[1]
+            return str(val[1])
         return super(Collection, cls).get_data(uri, cache=cache)
 
     @classmethod
