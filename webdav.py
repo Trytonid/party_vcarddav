@@ -253,7 +253,7 @@ class Collection(ModelSQL, ModelView):
             val = vcard_obj.execute([party_id],
                     {'id': party_id, 'ids': [party_id]},
                     )
-            return val[1]
+            return str(val[1])
         return super(Collection, self).get_data(uri, cache=cache)
 
     def get_address_data(self, uri, cache=None):
