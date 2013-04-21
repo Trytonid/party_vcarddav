@@ -3,7 +3,7 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "error:party.party:"
-msgid "The UUID of the party must be unique!"
+msgid "The UUID of the party must be unique."
 msgstr ""
 
 msgctxt "field:party.party,uuid:"
