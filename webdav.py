@@ -2,6 +2,10 @@
 #this repository contains the full copyright notices and license terms.
 from pywebdav.lib.errors import DAV_NotFound, DAV_Forbidden
 from pywebdav.lib.constants import COLLECTION, OBJECT
+from sql.functions import Extract
+from sql.aggregate import Max
+from sql.conditionals import Coalesce
+
 from trytond.tools import reduce_ids
 from trytond.transaction import Transaction
 from trytond.cache import Cache
@@ -170,6 +174,7 @@ class Collection:
     @classmethod
     def get_creationdate(cls, uri, cache=None):
         Party = Pool().get('party.party')
+        party = Party.__table__()
         party_id = cls.vcard(uri)
 
         cursor = Transaction().cursor
@@ -189,11 +194,10 @@ class Collection:
             res = None
             for i in range(0, len(ids), cursor.IN_MAX):
                 sub_ids = ids[i:i + cursor.IN_MAX]
-                red_sql, red_ids = reduce_ids('id', sub_ids)
-                cursor.execute('SELECT id, '
-                        'EXTRACT(epoch FROM create_date) '
-                    'FROM "' + Party._table + '" '
-                    'WHERE ' + red_sql, red_ids)
+                red_sql = reduce_ids(party.id, sub_ids)
+                cursor.execute(*party.select(party.id,
+                        Extract('EPOCH', party.create_date),
+                        where=red_sql))
                 for party_id2, date in cursor.fetchall():
                     if party_id2 == party_id:
                         res = date
@@ -210,6 +214,9 @@ class Collection:
         Party = pool.get('party.party')
         Address = pool.get('party.address')
         ContactMechanism = pool.get('party.contact_mechanism')
+        party = Party.__table__()
+        address = Address.__table__()
+        contact_mechanism = ContactMechanism.__table__()
 
         cursor = Transaction().cursor
 
@@ -227,21 +234,21 @@ class Collection:
             res = None
             for i in range(0, len(ids), cursor.IN_MAX):
                 sub_ids = ids[i:i + cursor.IN_MAX]
-                red_sql, red_ids = reduce_ids('p.id', sub_ids)
-                cursor.execute('SELECT p.id, '
-                        'MAX(EXTRACT(epoch FROM '
-                            'COALESCE(p.write_date, p.create_date))), '
-                        'MAX(EXTRACT(epoch FROM '
-                            'COALESCE(a.write_date, a.create_date))), '
-                        'MAX(EXTRACT(epoch FROM '
-                            'COALESCE(c.write_date, c.create_date))) '
-                    'FROM "' + Party._table + '" p '
-                    'LEFT JOIN "' + Address._table + '" a '
-                        'ON p.id = a.party '
-                    'LEFT JOIN "' + ContactMechanism._table + '" c '
-                        'ON p.id = c.party '
-                    'WHERE ' + red_sql + ' '
-                    'GROUP BY p.id', red_ids)
+                red_sql = reduce_ids(party.id, sub_ids)
+                cursor.execute(*party.join(address, 'LEFT',
+                        condition=party.id == address.party
+                        ).join(contact_mechanism, 'LEFT',
+                        condition=party.id == contact_mechanism.party
+                        ).select(party.id,
+                        Max(Extract('EPOCH', Coalesce(party.write_date,
+                                    party.create_date))),
+                        Max(Extract('EPOCH', Coalesce(address.write_date,
+                                    address.create_date))),
+                        Max(Extract('EPOCH', Coalesce(
+                                    contact_mechanism.write_date,
+                                    contact_mechanism.create_date))),
+                        where=red_sql,
+                        group_by=party.id))
                 for party_id2, date_p, date_a, date_c in cursor.fetchall():
                     date = max(date_p, date_a, date_c)
                     if party_id2 == party_id:

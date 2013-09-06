@@ -5,7 +5,7 @@ import vobject
 
 from trytond.model import fields
 from trytond.report import Report
-from trytond.backend import TableHandler, FIELDS
+from trytond import backend
 from trytond.transaction import Transaction
 from trytond.pool import Pool, PoolMeta
 
@@ -29,18 +29,21 @@ class Party:
 
     @classmethod
     def __register__(cls, module_name):
+        TableHandler = backend.get('TableHandler')
         cursor = Transaction().cursor
         table = TableHandler(cursor, cls, module_name)
+        sql_table = cls.__table__()
 
         if not table.column_exist('uuid'):
             table.add_raw_column('uuid',
-                FIELDS[cls.uuid._type].sql_type(cls.uuid),
-                FIELDS[cls.uuid._type].sql_format, None, None)
-            cursor.execute('SELECT id FROM "' + cls._table + '"')
+                cls.uuid.sql_type(),
+                cls.uuid.sql_format, None, None)
+            cursor.execute(*sql_table.select(sql_table.id))
             for id, in cursor.fetchall():
-                cursor.execute('UPDATE "' + cls._table + '" '
-                    'SET "uuid" = %s WHERE id = %s',
-                    (cls.default_uuid(), id))
+                cursor.execute(*sql_table.update(
+                        columns=[sql_table.uuid],
+                        values=[cls.default_uuid()],
+                        where=sql_table.id == id))
         super(Party, cls).__register__(module_name)
 
     @staticmethod
