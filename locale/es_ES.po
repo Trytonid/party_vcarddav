@@ -5,7 +5,7 @@ msgstr "Content-Type: text/plain; charset=utf-8\n"
 msgctxt "error:ir.action.report:"
 msgid "Invalid email definition on report \"%s\"."
 msgstr ""
-"La definición de correo electrónico sobre el informe \"%s\", no es correcta."
+"La definición de correo electrónico sobre el informe \"%s\" no es correcta."
 
 msgctxt "error:party.party:"
 msgid "The UUID of the party must be unique."
