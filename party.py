@@ -73,10 +73,10 @@ class Party:
         return new_parties
 
     @classmethod
-    def write(cls, parties, vals):
+    def write(cls, parties, values, *args):
         Collection = Pool().get('webdav.collection')
 
-        super(Party, cls).write(parties, vals)
+        super(Party, cls).write(parties, values, *args)
         # Restart the cache for vcard
         Collection._vcard_cache.clear()
 
