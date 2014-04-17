@@ -25,7 +25,7 @@ msgstr "UUID"
 
 msgctxt "field:party.party,vcard:"
 msgid "VCard"
-msgstr "VCard"
+msgstr "vCard"
 
 msgctxt "help:party.party,uuid:"
 msgid "Universally Unique Identifier"
@@ -33,4 +33,4 @@ msgstr "Identificador universal único."
 
 msgctxt "model:ir.action,name:report_party_vcard"
 msgid "VCard"
-msgstr "VCard"
+msgstr "vCard"
