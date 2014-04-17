@@ -9,7 +9,7 @@ msgstr ""
 
 msgctxt "error:party.party:"
 msgid "The UUID of the party must be unique."
-msgstr "El UUID del tercer ha de ser únic."
+msgstr "L'UUID del tercer ha de ser únic."
 
 msgctxt "error:webdav.collection:"
 msgid ""
