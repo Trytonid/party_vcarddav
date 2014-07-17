@@ -6,7 +6,7 @@ from sql.functions import Extract
 from sql.aggregate import Max
 from sql.conditionals import Coalesce
 
-from trytond.tools import reduce_ids
+from trytond.tools import reduce_ids, grouped_slice
 from trytond.transaction import Transaction
 from trytond.cache import Cache
 from trytond.pool import Pool, PoolMeta
@@ -192,8 +192,7 @@ class Collection:
             else:
                 ids = [party_id]
             res = None
-            for i in range(0, len(ids), cursor.IN_MAX):
-                sub_ids = ids[i:i + cursor.IN_MAX]
+            for sub_ids in grouped_slice(ids):
                 red_sql = reduce_ids(party.id, sub_ids)
                 cursor.execute(*party.select(party.id,
                         Extract('EPOCH', party.create_date),
@@ -232,8 +231,7 @@ class Collection:
             else:
                 ids = [party_id]
             res = None
-            for i in range(0, len(ids), cursor.IN_MAX):
-                sub_ids = ids[i:i + cursor.IN_MAX]
+            for sub_ids in grouped_slice(ids):
                 red_sql = reduce_ids(party.id, sub_ids)
                 cursor.execute(*party.join(address, 'LEFT',
                         condition=party.id == address.party
