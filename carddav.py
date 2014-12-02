@@ -1,5 +1,5 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 from pywebdav.lib import propfind
 from pywebdav.lib.errors import DAV_NotFound, DAV_Error
 from trytond.protocols.webdav import TrytonDAVInterface, CACHE
@@ -7,8 +7,8 @@ from trytond.pool import Pool
 from trytond.transaction import Transaction
 
 TrytonDAVInterface.PROPS['urn:ietf:params:xml:ns:carddav'] = (
-        'address-data',
-        'addressbook-data',
+    'address-data',
+    'addressbook-data',
     )
 TrytonDAVInterface.M_NS['urn:ietf:params:xml:ns:carddav'] = '_get_carddav'
 
