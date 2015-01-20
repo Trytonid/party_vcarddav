@@ -280,24 +280,13 @@ class VCard(Report):
     __name__ = 'party_vcarddav.party.vcard'
 
     @classmethod
-    def execute(cls, ids, data):
-        pool = Pool()
-        Party = pool.get('party.party')
-        ActionReport = pool.get('ir.action.report')
+    def render(cls, report, report_context):
+        return ''.join(cls.create_vcard(party).serialize()
+            for party in report_context['records'])
 
-        action_reports = ActionReport.search([
-                ('report_name', '=', cls.__name__)
-                ])
-        if not action_reports:
-            raise Exception('Error', 'Report (%s) not find!' % cls.__name__)
-        action_report = action_reports[0]
-
-        parties = Party.browse(ids)
-
-        data = ''.join(cls.create_vcard(party).serialize()
-            for party in parties)
-
-        return ('vcf', buffer(data), False, action_report.name)
+    @classmethod
+    def convert(cls, report, data):
+        return 'vcf', data
 
     @classmethod
     def create_vcard(cls, party):
