@@ -3,7 +3,7 @@
 import uuid
 import vobject
 
-from trytond.model import fields
+from trytond.model import fields, Unique
 from trytond.report import Report
 from trytond import backend
 from trytond.transaction import Transaction
@@ -22,8 +22,9 @@ class Party:
     @classmethod
     def __setup__(cls):
         super(Party, cls).__setup__()
+        t = cls.__table__()
         cls._sql_constraints += [
-            ('uuid_uniq', 'UNIQUE(uuid)',
+            ('uuid_uniq', Unique(t, t.uuid),
                 'The UUID of the party must be unique.'),
             ]
 
