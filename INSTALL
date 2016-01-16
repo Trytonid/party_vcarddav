@@ -7,6 +7,7 @@ Prerequisites
  * Python 2.7 or later (http://www.python.org/)
  * trytond (http://www.tryton.org/)
  * trytond_party (http://www.tryton.org/)
+ * trytond_webdav (http://www.tryton.org/)
  * vobject 0.8.0 or later (http://vobject.skyhouseconsulting.com/)
  * pywebdav 0.9.8 or later (http://sourceforge.net/projects/pywebdav/)
  * python-sql (http://code.google.com/p/python-sql/)

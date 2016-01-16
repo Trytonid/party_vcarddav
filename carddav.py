@@ -2,7 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 from pywebdav.lib import propfind
 from pywebdav.lib.errors import DAV_NotFound, DAV_Error
-from trytond.protocols.webdav import TrytonDAVInterface, CACHE
+from trytond.modules.webdav.protocol import TrytonDAVInterface, CACHE
 from trytond.pool import Pool
 from trytond.transaction import Transaction
 
