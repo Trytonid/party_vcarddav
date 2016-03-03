@@ -31,8 +31,8 @@ class Party:
     @classmethod
     def __register__(cls, module_name):
         TableHandler = backend.get('TableHandler')
-        cursor = Transaction().cursor
-        table = TableHandler(cursor, cls, module_name)
+        cursor = Transaction().connection.cursor()
+        table = TableHandler(cls, module_name)
         sql_table = cls.__table__()
 
         if not table.column_exist('uuid'):

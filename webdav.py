@@ -177,7 +177,7 @@ class Collection:
         party = Party.__table__()
         party_id = cls.vcard(uri)
 
-        cursor = Transaction().cursor
+        cursor = Transaction().connection.cursor()
 
         if party_id is None:
             raise DAV_NotFound
@@ -217,7 +217,7 @@ class Collection:
         address = Address.__table__()
         contact_mechanism = ContactMechanism.__table__()
 
-        cursor = Transaction().cursor
+        cursor = Transaction().connection.cursor()
 
         party_id = cls.vcard(uri)
         if party_id:
@@ -294,7 +294,7 @@ class Collection:
             except Exception:
                 raise DAV_Forbidden
             party = Party(party_id)
-            return (Transaction().cursor.database_name + '/Contacts/' +
+            return (Transaction().database.name + '/Contacts/' +
                     party.uuid + '.vcf')
         if party_id:
             party = Party(party_id)

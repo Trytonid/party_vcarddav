@@ -36,7 +36,7 @@ def _get_carddav_address_data(self, uri):
     dbname, dburi = self._get_dburi(uri)
     if not dbname:
         raise DAV_NotFound
-    pool = Pool(Transaction().cursor.database_name)
+    pool = Pool(Transaction().database.name)
     try:
         Collection = pool.get('webdav.collection')
     except KeyError:
