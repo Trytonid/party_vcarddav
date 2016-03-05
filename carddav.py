@@ -2,7 +2,7 @@
 # this repository contains the full copyright notices and license terms.
 from pywebdav.lib import propfind
 from pywebdav.lib.errors import DAV_NotFound, DAV_Error
-from trytond.modules.webdav.protocol import TrytonDAVInterface, CACHE
+from trytond.modules.webdav.protocol import TrytonDAVInterface, LOCAL
 from trytond.pool import Pool
 from trytond.transaction import Transaction
 
@@ -42,7 +42,7 @@ def _get_carddav_address_data(self, uri):
     except KeyError:
         raise DAV_NotFound
     try:
-        return Collection.get_address_data(dburi, cache=CACHE)
+        return Collection.get_address_data(dburi, cache=LOCAL.cache)
     except DAV_Error:
         raise
     except Exception:
