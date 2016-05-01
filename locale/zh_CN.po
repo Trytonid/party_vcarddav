@@ -4,20 +4,20 @@ msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "error:party.party:"
 msgid "The UUID of the party must be unique."
-msgstr "El UUID del tercero debe ser único."
+msgstr ""
 
 msgctxt "field:party.party,uuid:"
 msgid "UUID"
-msgstr "UUID"
+msgstr ""
 
 msgctxt "field:party.party,vcard:"
 msgid "VCard"
-msgstr "vCard"
+msgstr ""
 
 msgctxt "help:party.party,uuid:"
 msgid "Universally Unique Identifier"
-msgstr "Identificador Universal Único"
+msgstr ""
 
 msgctxt "model:ir.action,name:report_party_vcard"
 msgid "VCard"
-msgstr "vCard"
+msgstr ""
