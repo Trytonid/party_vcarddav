@@ -1,5 +1,7 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
+import logging
+
 from pywebdav.lib.errors import DAV_NotFound, DAV_Forbidden
 from pywebdav.lib.constants import COLLECTION, OBJECT
 from sql.functions import Extract
@@ -10,9 +12,11 @@ from trytond.tools import reduce_ids, grouped_slice
 from trytond.transaction import Transaction
 from trytond.cache import Cache
 from trytond.pool import Pool, PoolMeta
+from trytond.exceptions import UserError, UserWarning, ConcurrencyException
 
 __all__ = ['Collection']
 __metaclass__ = PoolMeta
+logger = logging.getLogger(__name__)
 
 
 CARDDAV_NS = 'urn:ietf:params:xml:ns:carddav'
@@ -291,7 +295,11 @@ class Collection:
             values = Party().vcard2values(vcard)
             try:
                 party_id, = Party.create([values])
+            except (ConcurrencyException, UserError, UserWarning):
+                logger.debug('Create party failed', exc_info=True)
+                raise DAV_Forbidden
             except Exception:
+                logger.error('Create party failed', exc_info=True)
                 raise DAV_Forbidden
             party = Party(party_id)
             return (Transaction().database.name + '/Contacts/' +
@@ -302,7 +310,11 @@ class Collection:
             values = party.vcard2values(vcard)
             try:
                 Party.write([party], values)
+            except (ConcurrencyException, UserError, UserWarning):
+                logger.debug('Write party failed', exc_info=True)
+                raise DAV_Forbidden
             except Exception:
+                logger.error('Write party failed', exc_info=True)
                 raise DAV_Forbidden
             return
         return super(Collection, cls).put(uri, data, content_type,
@@ -336,7 +348,11 @@ class Collection:
         if party_id:
             try:
                 Party.delete([Party(party_id)])
+            except (ConcurrencyException, UserError, UserWarning):
+                logger.debug('Delete party failed', exc_info=True)
+                raise DAV_Forbidden
             except Exception:
+                logger.error('Delete party failed', exc_info=True)
                 raise DAV_Forbidden
             return 200
         return super(Collection, cls).rm(uri, cache=cache)
