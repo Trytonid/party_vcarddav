@@ -236,7 +236,8 @@ class Party:
 class Address:
     __name__ = 'party.address'
 
-    def vcard2values(self, adr):
+    @classmethod
+    def vcard2values(cls, adr):
         '''
         Convert adr from vcard to values for create or write
         '''
