@@ -26,6 +26,61 @@ class PartyVCardDAVTestCase(ModuleTestCase):
         self.assertIn('FN:Party 1', str(content))
 
     @with_transaction()
+    def test_party_vcard2values(self):
+        'Test Party.vcard2values'
+        pool = Pool()
+        Party = pool.get('party.party')
+
+        vcard = vobject.vCard()
+        vcard.add('n').value = vobject.vcard.Name('Pam Beesly')
+        vcard.add('fn').value = 'Pam Beesly'
+        vcard.add('email').value = 'pam@example.com'
+        vcard.add('tel').value = '+55512345'
+
+        self.assertDictEqual(
+            Party().vcard2values(vcard), {
+                'name': 'Pam Beesly',
+                'addresses': [],
+                'contact_mechanisms': [
+                    ('create', [{
+                                'type': 'email',
+                                'value': 'pam@example.com',
+                                }]),
+                    ('create', [{
+                                'type': 'phone',
+                                'value': '+55512345',
+                                }]),
+                    ],
+                'vcard': vcard.serialize(),
+                })
+
+        party, = Party.create([{
+                    'name': 'Pam',
+                    'contact_mechanisms': [
+                        ('create', [{
+                                    'type': 'email',
+                                    'value': 'foo@example.com',
+                                    }]),
+                        ],
+                    }])
+        cm, = party.contact_mechanisms
+        self.assertDictEqual(
+            party.vcard2values(vcard), {
+                'name': 'Pam Beesly',
+                'addresses': [],
+                'contact_mechanisms': [
+                    ('write', [cm.id], {
+                            'value': 'pam@example.com',
+                            }),
+                    ('create', [{
+                                'type': 'phone',
+                                'value': '+55512345',
+                                }]),
+                    ],
+                'vcard': vcard.serialize(),
+                })
+
+    @with_transaction()
     def test_address_vcard2values(self):
         'Test Address.vcard2values'
         pool = Pool()
