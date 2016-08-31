@@ -178,7 +178,7 @@ class Party:
                     continue
                 vals = {}
                 vals['value'] = email.value
-                res['contact_mechanisms'].append(('write', cm.id, vals))
+                res['contact_mechanisms'].append(('write', [cm.id], vals))
                 i += 1
             try:
                 new_emails = vcard.contents.get('email', [])[i:]
@@ -207,7 +207,7 @@ class Party:
                     continue
                 vals = {}
                 vals['value'] = tel.value
-                res['contact_mechanisms'].append(('write', cm.id, vals))
+                res['contact_mechanisms'].append(('write', [cm.id], vals))
                 i += 1
             try:
                 new_tels = vcard.contents.get('tel', [])[i:]
