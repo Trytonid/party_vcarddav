@@ -8,7 +8,7 @@ msgstr "El UUID de la entidad debe ser único."
 
 msgctxt "field:party.party,uuid:"
 msgid "UUID"
-msgstr "UUID"
+msgstr ""
 
 msgctxt "field:party.party,vcard:"
 msgid "VCard"

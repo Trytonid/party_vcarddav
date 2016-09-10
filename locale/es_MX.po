@@ -8,16 +8,16 @@ msgstr "El UUID de la entidad debe ser único."
 
 msgctxt "field:party.party,uuid:"
 msgid "UUID"
-msgstr "UUID"
+msgstr ""
 
 msgctxt "field:party.party,vcard:"
 msgid "VCard"
-msgstr "vCard"
+msgstr ""
 
 msgctxt "help:party.party,uuid:"
 msgid "Universally Unique Identifier"
-msgstr "Identificador universal único."
+msgstr "Identificador Universal Único"
 
 msgctxt "model:ir.action,name:report_party_vcard"
 msgid "VCard"
-msgstr "vCard"
+msgstr ""
