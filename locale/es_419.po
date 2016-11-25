@@ -10,10 +10,9 @@ msgctxt "field:party.party,uuid:"
 msgid "UUID"
 msgstr ""
 
-#, fuzzy
 msgctxt "field:party.party,vcard:"
 msgid "VCard"
-msgstr "VCard"
+msgstr ""
 
 msgctxt "help:party.party,uuid:"
 msgid "Universally Unique Identifier"
@@ -21,4 +20,4 @@ msgstr ""
 
 msgctxt "model:ir.action,name:report_party_vcard"
 msgid "VCard"
-msgstr "VCard"
+msgstr ""
