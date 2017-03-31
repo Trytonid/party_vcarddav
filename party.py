@@ -36,9 +36,7 @@ class Party:
         sql_table = cls.__table__()
 
         if not table.column_exist('uuid'):
-            table.add_raw_column('uuid',
-                cls.uuid.sql_type(),
-                cls.uuid.sql_format, None, None)
+            table.add_column('uuid', cls.uuid._sql_type)
             cursor.execute(*sql_table.select(sql_table.id))
             for id, in cursor.fetchall():
                 cursor.execute(*sql_table.update(
